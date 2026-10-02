@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>OmniCity AI — Live CCTV Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #020508;
+  --bg1:      #040b10;
+  --bg2:      #071218;
+  --bg3:      #0a1a24;
+  --scan:     rgba(0,255,180,0.03);
+  --green:    #00ffb4;
+  --greenD:   rgba(0,255,180,0.08);
+  --greenM:   rgba(0,255,180,0.18);
+  --red:      #ff2a4a;
+  --redD:     rgba(255,42,74,0.10);
+  --redM:     rgba(255,42,74,0.22);
+  --amber:    #ffaa00;
+  --amberD:   rgba(255,170,0,0.08);
+  --blue:     #00c8ff;
+  --blueD:    rgba(0,200,255,0.08);
+  --purple:   #c060ff;
+  --txt:      #b0ccd8;
+  --txt2:     #4a7080;
+  --txt3:     #1e3540;
+  --mono:     'Share Tech Mono', monospace;
+  --head:     'Orbitron', sans-serif;
+  --body:     'Rajdhani', sans-serif;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; overflow:hidden; }
+
+body {
+  font-family: var(--body);
+  background: var(--bg);
+  color: var(--txt);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── SCANLINE OVERLAY ── */
+body::before {
+  content:'';
+  position:fixed; inset:0; pointer-events:none; z-index:9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px, transparent 3px,
+    rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
+  );
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  height: 52px; flex-shrink:0;
+  background: var(--bg1);
+  border-bottom: 1px solid rgba(0,255,180,0.12);
+  display: flex; align-items: center;
+  padding: 0 20px; gap: 20px;
+  position: relative;
+}
+.topbar::after {
+  content:'';
+  position:absolute; bottom:0; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  opacity: 0.4;
+}
+
+.logo-text {
+  font-family: var(--head);
+  font-size: 13px; font-weight: 900;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--green);
+  text-shadow: 0 0 20px rgba(0,255,180,0.5);
+  flex-shrink: 0;
+}
+.logo-text span { color: var(--txt); }
+
+.top-divider { width:1px; height:28px; background:var(--txt3); flex-shrink:0; }
+
+.sys-status {
+  display:flex; align-items:center; gap:6px;
+  font-family: var(--mono); font-size:10px; color:var(--txt2);
+}
+.status-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.status-dot.red   { background:var(--red);   box-shadow:0 0 8px var(--red); animation:blink .8s ease-in-out infinite; }
+.status-dot.amber { background:var(--amber); box-shadow:0 0 8px var(--amber); }
+
+.top-ticker {
+  flex:1;
+  font-family: var(--mono); font-size:10px; color: var(--txt2);
+  overflow:hidden; white-space:nowrap;
+  position:relative;
+}
+.ticker-inner {
+  display:inline-block;
+  animation: marquee 40s linear infinite;
+}
+@keyframes marquee { 0%{transform:translateX(100%)} 100%{transform:translateX(-100%)} }
+
+.top-right {
+  display:flex; align-items:center; gap:14px; flex-shrink:0; margin-left:auto;
+}
+.sim-clock {
+  font-family: var(--mono); font-size:13px;
+  color: var(--green); letter-spacing:.1em;
+  text-shadow: 0 0 12px rgba(0,255,180,0.4);
+}
+.incident-count {
+  display:flex; align-items:center; gap:5px;
+  padding:4px 10px;
+  background:var(--redD); border:1px solid rgba(255,42,74,0.25);
+  border-radius:3px;
+  font-family:var(--mono); font-size:10px; color:var(--red);
+  font-weight:700;
+}
+
+/* ── MAIN GRID ── */
+.main {
+  flex:1; display:flex; overflow:hidden;
+}
+
+/* ── CAMERA GRID ── */
+.cam-grid {
+  flex:1;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  background: #000;
+}
+
+/* ── SINGLE CAMERA CELL ── */
+.cam-cell {
+  position: relative;
+  background: var(--bg1);
+  overflow: hidden;
+  cursor: pointer;
+  transition: outline .15s;
+}
+.cam-cell:hover { outline: 1px solid rgba(0,255,180,0.3); }
+.cam-cell.active-incident { outline: 2px solid var(--red); }
+.cam-cell.active-incident .cam-bg { filter: brightness(0.7); }
+
+/* Background "scene" canvas */
+.cam-bg {
+  position:absolute; inset:0;
+  transition: background .5s;
+}
+
+/* Animated traffic dots */
+.traffic-layer {
+  position:absolute; inset:0; pointer-events:none;
+}
+
+/* CRT vignette per camera */
+.cam-cell::after {
+  content:'';
+  position:absolute; inset:0; pointer-events:none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.65) 100%);
+  z-index:3;
+}
+
+/* Corner brackets */
+.corner { position:absolute; width:16px; height:16px; z-index:5; }
+.corner.tl { top:8px;  left:8px;  border-top:1.5px solid var(--green); border-left:1.5px solid var(--green); }
+.corner.tr { top:8px;  right:8px; border-top:1.5px solid var(--green); border-right:1.5px solid var(--green); }
+.corner.bl { bottom:8px; left:8px;  border-bottom:1.5px solid var(--green); border-left:1.5px solid var(--green); }
+.corner.br { bottom:8px; right:8px; border-bottom:1.5px solid var(--green); border-right:1.5px solid var(--green); }
+.cam-cell.active-incident .corner { border-color:var(--red) !important; animation:cornerpulse 1s ease-in-out infinite; }
+@keyframes cornerpulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* Camera label */
+.cam-label {
+  position:absolute; top:10px; left:10px; z-index:6;
+  display:flex; align-items:center; gap:6px;
+}
+.cam-id {
+  font-family: var(--head); font-size:9px; font-weight:700;
+  color:var(--green); letter-spacing:.12em;
+  text-shadow: 0 0 8px rgba(0,255,180,0.6);
+  background: rgba(0,0,0,0.55); padding:2px 6px; border-radius:2px;
+}
+.rec-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--red); box-shadow:0 0 8px var(--red);
+  animation: blink .9s ease-in-out infinite;
+}
+
+/* Zone + node info */
+.cam-info {
+  position:absolute; bottom:10px; left:10px; z-index:6;
+}
+.cam-zone {
+  font-family: var(--mono); font-size:9px; color:var(--txt2);
+  background:rgba(0,0,0,0.55); padding:2px 6px; border-radius:2px;
+  letter-spacing:.06em;
+}
+.cam-node {
+  font-family: var(--mono); font-size:9px; color:var(--txt3);
+  margin-top:2px; padding:1px 6px;
+}
+
+/* Stats strip bottom-right */
+.cam-stats {
+  position:absolute; bottom:10px; right:10px; z-index:6;
+  text-align:right;
+  display:flex; flex-direction:column; gap:2px;
+}
+.stat-pill {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:2px 7px;
+  background:rgba(0,0,0,0.55);
+  border-radius:2px;
+  font-family:var(--mono); font-size:9px;
+}
+.stat-pill.green { color:var(--green); }
+.stat-pill.amber { color:var(--amber); }
+.stat-pill.red   { color:var(--red); }
+.stat-pill.blue  { color:var(--blue); }
+
+/* ── INCIDENT OVERLAY ── */
+.incident-overlay {
+  position:absolute; inset:0; z-index:7;
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none;
+  opacity:0; transition:opacity .3s;
+}
+.incident-overlay.show { opacity:1; }
+
+.inc-box {
+  background: rgba(255,42,74,0.12);
+  border: 1px solid rgba(255,42,74,0.5);
+  border-radius:4px;
+  padding:10px 18px;
+  text-align:center;
+  backdrop-filter: blur(4px);
+  animation: incpulse 1.5s ease-in-out infinite;
+  max-width:70%;
+}
+@keyframes incpulse { 0%,100%{box-shadow:0 0 0 rgba(255,42,74,0)} 50%{box-shadow:0 0 24px rgba(255,42,74,0.4)} }
+
+.inc-type {
+  font-family:var(--head); font-size:11px; font-weight:700;
+  color:var(--red); letter-spacing:.12em;
+  text-shadow:0 0 12px rgba(255,42,74,0.7);
+  margin-bottom:4px;
+}
+.inc-auth {
+  font-family:var(--mono); font-size:9px; color:var(--amber);
+  letter-spacing:.08em; margin-bottom:3px;
+}
+.inc-conf {
+  font-family:var(--mono); font-size:9px; color:var(--txt2);
+}
+.inc-sev {
+  display:inline-block; margin-top:5px;
+  padding:2px 8px; border-radius:2px;
+  font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:.1em;
+}
+.inc-sev.CRITICAL { background:rgba(255,42,74,.2); color:var(--red); border:1px solid rgba(255,42,74,.4); }
+.inc-sev.HIGH     { background:rgba(255,170,0,.2);  color:var(--amber); border:1px solid rgba(255,170,0,.4); }
+.inc-sev.LOW      { background:rgba(0,255,180,.1); color:var(--green); border:1px solid rgba(0,255,180,.3); }
+
+/* Green wave badge */
+.gw-badge {
+  position:absolute; top:10px; right:10px; z-index:8;
+  display:none; align-items:center; gap:5px;
+  background:rgba(0,255,180,0.1); border:1px solid rgba(0,255,180,0.4);
+  border-radius:3px; padding:3px 8px;
+  font-family:var(--mono); font-size:9px; color:var(--green);
+  animation:gwpulse 1s ease-in-out infinite;
+}
+.gw-badge.show { display:flex; }
+@keyframes gwpulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+/* Clear badge */
+.clear-badge {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  z-index:6; pointer-events:none;
+  opacity:0; transition:opacity .4s;
+}
+.clear-badge.show { opacity:1; }
+.clear-inner {
+  font-family:var(--head); font-size:10px; font-weight:700;
+  color:var(--green); letter-spacing:.2em;
+  text-shadow:0 0 14px rgba(0,255,180,0.6);
+  background:rgba(0,255,180,0.06); border:1px solid rgba(0,255,180,0.2);
+  padding:5px 14px; border-radius:3px;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  width: 260px; flex-shrink:0;
+  background: var(--bg1);
+  border-left: 1px solid rgba(0,255,180,0.08);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+
+.panel-section {
+  border-bottom:1px solid var(--txt3);
+  padding:10px 14px;
+  flex-shrink:0;
+}
+.panel-title {
+  font-family:var(--head); font-size:8px; font-weight:700;
+  letter-spacing:.18em; color:var(--txt2); text-transform:uppercase;
+  margin-bottom:8px;
+}
+
+/* City stats */
+.city-stats { display:flex; flex-direction:column; gap:5px; }
+.cs-row {
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--mono); font-size:10px;
+}
+.cs-label { color:var(--txt2); }
+.cs-val   { color:var(--green); font-weight:700; }
+.cs-val.red { color:var(--red); }
+.cs-val.amber { color:var(--amber); }
+
+/* Health bars */
+.hbar-wrap { margin-top:2px; }
+.hbar-label { font-family:var(--mono); font-size:9px; color:var(--txt2); margin-bottom:3px; display:flex; justify-content:space-between; }
+.hbar { height:3px; background:var(--txt3); border-radius:2px; margin-bottom:5px; }
+.hbar-fill { height:100%; border-radius:2px; transition:width .8s ease; }
+.hbar-fill.g { background:var(--green); box-shadow:0 0 6px var(--green); }
+.hbar-fill.a { background:var(--amber); }
+.hbar-fill.r { background:var(--red); }
+
+/* Incident log */
+.inc-log { flex:1; overflow-y:auto; padding:8px 14px; }
+.inc-log::-webkit-scrollbar { width:3px; }
+.inc-log::-webkit-scrollbar-track { background:transparent; }
+.inc-log::-webkit-scrollbar-thumb { background:var(--txt3); }
+
+.log-row {
+  display:flex; align-items:flex-start; gap:7px;
+  padding:6px 0; border-bottom:1px solid var(--txt3);
+  animation:logfade .4s ease;
+}
+@keyframes logfade { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+
+.log-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+.log-body { flex:1; }
+.log-type { font-family:var(--mono); font-size:10px; color:var(--txt); line-height:1.3; }
+.log-meta { font-family:var(--mono); font-size:9px; color:var(--txt2); margin-top:1px; }
+
+/* ── BOTTOM STATUS BAR ── */
+.statusbar {
+  height:26px; flex-shrink:0;
+  background:var(--bg1);
+  border-top:1px solid var(--txt3);
+  display:flex; align-items:center; gap:16px;
+  padding:0 14px;
+  font-family:var(--mono); font-size:9px; color:var(--txt2);
+}
+.sb-item { display:flex; align-items:center; gap:5px; }
+.sb-dot  { width:5px; height:5px; border-radius:50%; background:var(--green); box-shadow:0 0 5px var(--green); }
+.sb-dot.off { background:var(--txt3); box-shadow:none; }
+
+/* ── SECTOR CHANGE FLASH ── */
+.sector-flash {
+  position:absolute; inset:0; z-index:10;
+  background:rgba(0,255,180,0.06);
+  pointer-events:none;
+  opacity:0;
+}
+.sector-flash.flash { animation:flashanim .4s ease; }
+@keyframes flashanim { 0%{opacity:1} 100%{opacity:0} }
+
+/* Signal light */
+.signal-light {
+  position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  z-index:6;
+  display:flex; align-items:center; gap:4px;
+  background:rgba(0,0,0,0.55); padding:2px 8px; border-radius:10px;
+}
+.sig-dot { width:7px; height:7px; border-radius:50%; opacity:.2; }
+.sig-dot.active { opacity:1; }
+.sig-dot.sig-g { background:var(--green); box-shadow:0 0 8px var(--green); }
+.sig-dot.sig-y { background:var(--amber); box-shadow:0 0 8px var(--amber); }
+.sig-dot.sig-r { background:var(--red);   box-shadow:0 0 8px var(--red); }
+
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="logo-text">OMNI<span>CITY</span> AI</div>
+  <div class="top-divider"></div>
+  <div class="sys-status">
+    <div class="status-dot" id="sim-dot"></div>
+    <span id="sim-status-txt">CONNECTING…</span>
+  </div>
+  <div class="top-divider"></div>
+  <div class="sys-status">
+    <div class="status-dot amber"></div>
+    <span>CV SENTINEL ACTIVE</span>
+  </div>
+  <div class="top-ticker">
+    <div class="ticker-inner" id="ticker-txt">
+      ● SYSTEM BOOT ● DIGITAL TWIN INITIALISING ● CV-4/5/6 PIPELINES ARMED ● ML-1 ROUTE OPTIMISER ONLINE ● GRID MONITORING ● WATER NETWORK NOMINAL
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="sim-clock" id="sim-clock">--:--</div>
+    <div class="incident-count">
+      <div class="status-dot red"></div>
+      <span id="inc-counter">0</span> INCIDENTS
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- ── 4 CAMERA CELLS ── -->
+  <div class="cam-grid" id="cam-grid">
+
+    <!-- Camera 0 -->
+    <div class="cam-cell" id="cam0">
+      <canvas class="cam-bg" id="canvas0"></canvas>
+      <canvas class="traffic-layer" id="traffic0"></canvas>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="cam-label">
+        <div class="cam-id" id="cam0-id">CAM-01</div>
+        <div class="rec-dot"></div>
+      </div>
+      <div class="signal-light" id="sig0">
+        <div class="sig-dot sig-r" id="sig0-r"></div>
+        <div class="sig-dot sig-y" id="sig0-y"></div>
+        <div class="sig-dot sig-g" id="sig0-g"></div>
+      </div>
+      <div class="cam-info">
+        <div class="cam-zone" id="cam0-zone">ZONE —</div>
+        <div class="cam-node" id="cam0-node">NODE [—,—]</div>
+      </div>
+      <div class="cam-stats" id="cam0-stats"></div>
+      <div class="incident-overlay" id="inc0">
+        <div class="inc-box">
+          <div class="inc-type" id="inc0-type">INCIDENT</div>
+          <div class="inc-auth" id="inc0-auth">AUTHORITY</div>
+          <div class="inc-conf" id="inc0-conf">CONF: —</div>
+          <div class="inc-sev" id="inc0-sev">SEV</div>
+        </div>
+      </div>
+      <div class="clear-badge" id="clear0"><div class="clear-inner">◉ SECTOR CLEAR</div></div>
+      <div class="gw-badge" id="gw0">▶ GREEN WAVE ACTIVE</div>
+      <div class="sector-flash" id="flash0"></div>
+    </div>
+
+    <!-- Camera 1 -->
+    <div class="cam-cell" id="cam1">
+      <canvas class="cam-bg" id="canvas1"></canvas>
+      <canvas class="traffic-layer" id="traffic1"></canvas>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="cam-label">
+        <div class="cam-id" id="cam1-id">CAM-02</div>
+        <div class="rec-dot"></div>
+      </div>
+      <div class="signal-light" id="sig1">
+        <div class="sig-dot sig-r" id="sig1-r"></div>
+        <div class="sig-dot sig-y" id="sig1-y"></div>
+        <div class="sig-dot sig-g" id="sig1-g"></div>
+      </div>
+      <div class="cam-info">
+        <div class="cam-zone" id="cam1-zone">ZONE —</div>
+        <div class="cam-node" id="cam1-node">NODE [—,—]</div>
+      </div>
+      <div class="cam-stats" id="cam1-stats"></div>
+      <div class="incident-overlay" id="inc1">
+        <div class="inc-box">
+          <div class="inc-type" id="inc1-type">INCIDENT</div>
+          <div class="inc-auth" id="inc1-auth">AUTHORITY</div>
+          <div class="inc-conf" id="inc1-conf">CONF: —</div>
+          <div class="inc-sev" id="inc1-sev">SEV</div>
+        </div>
+      </div>
+      <div class="clear-badge" id="clear1"><div class="clear-inner">◉ SECTOR CLEAR</div></div>
+      <div class="gw-badge" id="gw1">▶ GREEN WAVE ACTIVE</div>
+      <div class="sector-flash" id="flash1"></div>
+    </div>
+
+    <!-- Camera 2 -->
+    <div class="cam-cell" id="cam2">
+      <canvas class="cam-bg" id="canvas2"></canvas>
+      <canvas class="traffic-layer" id="traffic2"></canvas>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="cam-label">
+        <div class="cam-id" id="cam2-id">CAM-03</div>
+        <div class="rec-dot"></div>
+      </div>
+      <div class="signal-light" id="sig2">
+        <div class="sig-dot sig-r" id="sig2-r"></div>
+        <div class="sig-dot sig-y" id="sig2-y"></div>
+        <div class="sig-dot sig-g" id="sig2-g"></div>
+      </div>
+      <div class="cam-info">
+        <div class="cam-zone" id="cam2-zone">ZONE —</div>
+        <div class="cam-node" id="cam2-node">NODE [—,—]</div>
+      </div>
+      <div class="cam-stats" id="cam2-stats"></div>
+      <div class="incident-overlay" id="inc2">
+        <div class="inc-box">
+          <div class="inc-type" id="inc2-type">INCIDENT</div>
+          <div class="inc-auth" id="inc2-auth">AUTHORITY</div>
+          <div class="inc-conf" id="inc2-conf">CONF: —</div>
+          <div class="inc-sev" id="inc2-sev">SEV</div>
+        </div>
+      </div>
+      <div class="clear-badge" id="clear2"><div class="clear-inner">◉ SECTOR CLEAR</div></div>
+      <div class="gw-badge" id="gw2">▶ GREEN WAVE ACTIVE</div>
+      <div class="sector-flash" id="flash2"></div>
+    </div>
+
+    <!-- Camera 3 -->
+    <div class="cam-cell" id="cam3">
+      <canvas class="cam-bg" id="canvas3"></canvas>
+      <canvas class="traffic-layer" id="traffic3"></canvas>
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+      <div class="cam-label">
+        <div class="cam-id" id="cam3-id">CAM-04</div>
+        <div class="rec-dot"></div>
+      </div>
+      <div class="signal-light" id="sig3">
+        <div class="sig-dot sig-r" id="sig3-r"></div>
+        <div class="sig-dot sig-y" id="sig3-y"></div>
+        <div class="sig-dot sig-g" id="sig3-g"></div>
+      </div>
+      <div class="cam-info">
+        <div class="cam-zone" id="cam3-zone">ZONE —</div>
+        <div class="cam-node" id="cam3-node">NODE [—,—]</div>
+      </div>
+      <div class="cam-stats" id="cam3-stats"></div>
+      <div class="incident-overlay" id="inc3">
+        <div class="inc-box">
+          <div class="inc-type" id="inc3-type">INCIDENT</div>
+          <div class="inc-auth" id="inc3-auth">AUTHORITY</div>
+          <div class="inc-conf" id="inc3-conf">CONF: —</div>
+          <div class="inc-sev" id="inc3-sev">SEV</div>
+        </div>
+      </div>
+      <div class="clear-badge" id="clear3"><div class="clear-inner">◉ SECTOR CLEAR</div></div>
+      <div class="gw-badge" id="gw3">▶ GREEN WAVE ACTIVE</div>
+      <div class="sector-flash" id="flash3"></div>
+    </div>
+
+  </div><!-- /cam-grid -->
+
+  <!-- ── SIDE PANEL ── -->
+  <div class="side-panel">
+
+    <div class="panel-section">
+      <div class="panel-title">City Overview</div>
+      <div class="city-stats">
+        <div class="cs-row"><span class="cs-label">SIM TICK</span><span class="cs-val" id="sp-tick">—</span></div>
+        <div class="cs-row"><span class="cs-label">SIM TIME</span><span class="cs-val" id="sp-simtime">—</span></div>
+        <div class="cs-row"><span class="cs-label">ACTIVE NPCs</span><span class="cs-val" id="sp-npcs">—</span></div>
+        <div class="cs-row"><span class="cs-label">EMERGENCIES</span><span class="cs-val red" id="sp-emg">—</span></div>
+        <div class="cs-row"><span class="cs-label">GREEN WAVES</span><span class="cs-val" id="sp-gw">—</span></div>
+        <div class="cs-row"><span class="cs-label">CV DETECTIONS</span><span class="cs-val amber" id="sp-cvdet">—</span></div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Infrastructure Health</div>
+      <div class="hbar-wrap">
+        <div class="hbar-label"><span>⚡ POWER GRID</span><span id="grid-pct">—%</span></div>
+        <div class="hbar"><div class="hbar-fill g" id="grid-bar" style="width:0%"></div></div>
+        <div class="hbar-label"><span>💧 WATER NETWORK</span><span id="water-pct">—%</span></div>
+        <div class="hbar"><div class="hbar-fill g" id="water-bar" style="width:0%"></div></div>
+        <div class="hbar-label"><span>🚗 AVG TRAFFIC</span><span id="traffic-pct">—</span></div>
+        <div class="hbar"><div class="hbar-fill a" id="traffic-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="panel-section" style="flex-shrink:0">
+      <div class="panel-title">Active Cameras</div>
+      <div class="city-stats" id="cam-node-list"></div>
+    </div>
+
+    <div style="padding:8px 14px 4px; flex-shrink:0">
+      <div class="panel-title">Live Incident Log</div>
+    </div>
+    <div class="inc-log" id="inc-log"></div>
+
+  </div>
+
+</div><!-- /main -->
+
+<!-- ── STATUS BAR ── -->
+<div class="statusbar">
+  <div class="sb-item"><div class="sb-dot" id="sb-api"></div><span>API</span></div>
+  <div class="sb-item"><div class="sb-dot" id="sb-sim"></div><span>SIMULATION</span></div>
+  <div class="sb-item"><div class="sb-dot off" id="sb-cv"></div><span>CV PIPELINE</span></div>
+  <div class="sb-item"><div class="sb-dot off" id="sb-ml2"></div><span>ML-2</span></div>
+  <span style="margin-left:auto;color:var(--txt3)" id="sb-tick">TICK —</span>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
+const API            = 'http://localhost:8000';
+const ROTATE_SECS    = 7;       // seconds per camera location
+const POLL_MS        = 1800;    // API poll interval
+const GRID_ROWS      = 20;
+const GRID_COLS      = 20;
+
+// Zone colour palettes for the scene backgrounds
+const ZONE_PALETTES = {
+  Residential: { sky:'#0a1520', road:'#1a2a1a', building:'#1a2535' },
+  Commercial:  { sky:'#0d1018', road:'#181818', building:'#1e2030' },
+  Industrial:  { sky:'#0e0e0e', road:'#151510', building:'#1a1a12' },
+  Park:        { sky:'#061510', road:'#0a1a0a', building:'#0c2010' },
+};
+
+const INCIDENT_ICONS = {
+  'Crime_Weapon':        '🔫',
+  'Accident':            '🚗',
+  'Fire_Smoke':          '🔥',
+  'Infra_PipeBurst':     '💧',
+  'Infra_GridBlackout':  '⚡',
+  'Accident_Debris':     '⚠️',
+  'Crime_Theft':         '🔓',
+};
+
+const AUTHORITY_COLORS = {
+  'Police':      '#00c8ff',
+  'EMS':         '#00ffb4',
+  'Fire Brigade':'#ff6a00',
+  'Jal Sansthan':'#00aaff',
+  'UPPCL':       '#ffaa00',
+  'PWD':         '#aaaaaa',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+// Each of the 4 camera slots tracks which grid node it's currently watching
+const camState = [
+  { node: [2,  3],  zone: 'Residential', signal:'GREEN', agents:0, density:0, incidents:[], gw:false },
+  { node: [8,  12], zone: 'Commercial',  signal:'RED',   agents:0, density:0, incidents:[], gw:false },
+  { node: [14, 6],  zone: 'Industrial',  signal:'YELLOW',agents:0, density:0, incidents:[], gw:false },
+  { node: [5,  17], zone: 'Park',        signal:'GREEN', agents:0, density:0, incidents:[], gw:false },
+];
+
+// Pool of all active incidents from the sim
+let liveIncidents    = [];
+let liveGreenWaves   = [];
+let liveSignals      = {};
+let citySnap         = {};
+let logEntries       = [];
+let simOnline        = false;
+let rotateTimers     = [null,null,null,null];
+let trafficParticles = [[],[],[],[]];   // moving dots per camera
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CANVAS SCENE RENDERER
+// Draws a stylised top-down city view per zone type
+// ─────────────────────────────────────────────────────────────────────────────
+function drawScene(idx) {
+  const canvas = document.getElementById(`canvas${idx}`);
+  const cell   = document.getElementById(`cam${idx}`);
+  canvas.width  = cell.offsetWidth  || 400;
+  canvas.height = cell.offsetHeight || 300;
+  const cx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const st = camState[idx];
+  const pal = ZONE_PALETTES[st.zone] || ZONE_PALETTES.Residential;
+
+  // Sky/ground
+  const grad = cx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0, pal.sky);
+  grad.addColorStop(1, _darken(pal.sky, 0.6));
+  cx.fillStyle = grad;
+  cx.fillRect(0,0,W,H);
+
+  // Ground grid (road network)
+  cx.strokeStyle = 'rgba(0,255,180,0.06)';
+  cx.lineWidth   = 1;
+  const gSize = 40;
+  for (let x=0; x<W; x+=gSize) { cx.beginPath(); cx.moveTo(x,0); cx.lineTo(x,H); cx.stroke(); }
+  for (let y=0; y<H; y+=gSize) { cx.beginPath(); cx.moveTo(0,y); cx.lineTo(W,y); cx.stroke(); }
+
+  // Main roads (horizontal + vertical centre lines)
+  cx.strokeStyle = 'rgba(0,255,180,0.12)';
+  cx.lineWidth   = 2;
+  cx.beginPath(); cx.moveTo(0,H/2); cx.lineTo(W,H/2); cx.stroke();
+  cx.beginPath(); cx.moveTo(W/2,0); cx.lineTo(W/2,H); cx.stroke();
+
+  // Road dashes
+  cx.strokeStyle = 'rgba(255,170,0,0.15)';
+  cx.setLineDash([12,10]); cx.lineWidth = 1;
+  cx.beginPath(); cx.moveTo(0,H/2); cx.lineTo(W,H/2); cx.stroke();
+  cx.beginPath(); cx.moveTo(W/2,0); cx.lineTo(W/2,H); cx.stroke();
+  cx.setLineDash([]);
+
+  // Buildings (random rects)
+  const seed = (st.node[0]*100 + st.node[1]) % 1000;
+  const rng  = seededRng(seed);
+  for (let i=0; i<12; i++) {
+    const bx = rng()*W*0.85, by = rng()*H*0.85;
+    const bw = 18 + rng()*35,  bh = 14 + rng()*28;
+    // Avoid the roads
+    if (Math.abs(bx+bw/2 - W/2) < 22 || Math.abs(by+bh/2 - H/2) < 22) continue;
+    cx.fillStyle = pal.building;
+    cx.fillRect(bx, by, bw, bh);
+    // Window lights
+    cx.fillStyle = 'rgba(255,220,120,0.12)';
+    for (let wy=by+4; wy<by+bh-4; wy+=6) {
+      for (let wx=bx+3; wx<bx+bw-3; wx+=5) {
+        if (rng() > 0.45) cx.fillRect(wx,wy,3,3);
+      }
+    }
+    // Building outline
+    cx.strokeStyle = 'rgba(0,255,180,0.07)';
+    cx.lineWidth = 0.5;
+    cx.strokeRect(bx, by, bw, bh);
+  }
+
+  // Node GPS label (faint)
+  const gps = nodeToGps(st.node);
+  cx.fillStyle = 'rgba(0,255,180,0.12)';
+  cx.font      = '9px Share Tech Mono';
+  cx.fillText(`${gps[0].toFixed(4)}°N  ${gps[1].toFixed(4)}°E`, 8, H-8);
+}
+
+function _darken(hex, amt) {
+  // Simple: just return a slightly different string (not real colour math needed)
+  return hex;
+}
+
+function seededRng(seed) {
+  let s = seed + 1;
+  return function() {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+function nodeToGps(node) {
+  return [
+    parseFloat((25.317 + node[0] * 0.003).toFixed(6)),
+    parseFloat((82.973 + node[1] * 0.003).toFixed(6)),
+  ];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRAFFIC PARTICLE SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+function initParticles(idx) {
+  const cell = document.getElementById(`cam${idx}`);
+  const W = cell.offsetWidth || 400, H = cell.offsetHeight || 300;
+  const count = 6 + Math.floor(camState[idx].density * 20);
+  trafficParticles[idx] = [];
+  for (let i=0; i<count; i++) {
+    // Horizontal or vertical road particle
+    const horiz = Math.random() > 0.5;
+    trafficParticles[idx].push({
+      x:     horiz ? Math.random()*W : W/2 + (Math.random()>0.5?-8:8),
+      y:     horiz ? H/2 + (Math.random()>0.5?-8:8) : Math.random()*H,
+      vx:    horiz ? (Math.random()>0.5?1:-1) * (0.6 + Math.random()*1.2) : 0,
+      vy:    horiz ? 0 : (Math.random()>0.5?1:-1) * (0.6 + Math.random()*1.2),
+      size:  2 + Math.random()*2,
+      color: Math.random() > 0.15 ? '#00ffb4' : '#ffaa00',
+      alpha: 0.4 + Math.random()*0.5,
+      W, H,
+    });
+  }
+}
+
+function tickParticles(idx) {
+  const canvas = document.getElementById(`traffic${idx}`);
+  const cell   = document.getElementById(`cam${idx}`);
+  canvas.width  = cell.offsetWidth  || 400;
+  canvas.height = cell.offsetHeight || 300;
+  const cx = canvas.getContext('2d');
+  cx.clearRect(0,0,canvas.width,canvas.height);
+
+  for (const p of trafficParticles[idx]) {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = p.W;
+    if (p.x > p.W) p.x = 0;
+    if (p.y < 0) p.y = p.H;
+    if (p.y > p.H) p.y = 0;
+
+    // Headlight glow
+    const grd = cx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*3);
+    grd.addColorStop(0, p.color.replace(')',`,${p.alpha})`).replace('rgb','rgba'));
+    grd.addColorStop(1, 'transparent');
+    cx.fillStyle = grd;
+    cx.beginPath();
+    cx.arc(p.x, p.y, p.size*3, 0, Math.PI*2);
+    cx.fill();
+
+    // Vehicle dot
+    cx.fillStyle = p.color;
+    cx.globalAlpha = p.alpha;
+    cx.beginPath();
+    cx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+    cx.fill();
+    cx.globalAlpha = 1;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UI UPDATE — per camera slot
+// ─────────────────────────────────────────────────────────────────────────────
+function updateCamUI(idx) {
+  const st     = camState[idx];
+  const cell   = document.getElementById(`cam${idx}`);
+  const hasInc = st.incidents.length > 0;
+
+  // Cell border
+  cell.classList.toggle('active-incident', hasInc);
+
+  // Label
+  document.getElementById(`cam${idx}-id`).textContent =
+    `CAM-0${idx+1} · SECTOR ${String.fromCharCode(65+idx)}`;
+
+  // Zone + node
+  document.getElementById(`cam${idx}-zone`).textContent = st.zone.toUpperCase();
+  document.getElementById(`cam${idx}-node`).textContent =
+    `NODE [${st.node[0]}, ${st.node[1]}]`;
+
+  // Signal
+  const sigKey = (st.signal||'GREEN').toUpperCase();
+  document.getElementById(`sig${idx}-r`).classList.toggle('active', sigKey==='RED');
+  document.getElementById(`sig${idx}-y`).classList.toggle('active', sigKey==='YELLOW');
+  document.getElementById(`sig${idx}-g`).classList.toggle('active', sigKey==='GREEN');
+
+  // Stats strip
+  const densityPct = Math.round(st.density * 100);
+  const densityCol = densityPct > 70 ? 'red' : densityPct > 40 ? 'amber' : 'green';
+  document.getElementById(`cam${idx}-stats`).innerHTML = `
+    <div class="stat-pill ${densityCol}">▣ DENSITY ${densityPct}%</div>
+    <div class="stat-pill blue">👤 ${st.agents} AGENTS</div>
+    <div class="stat-pill ${hasInc?'red':'green'}">⚠ ${st.incidents.length} INCIDENTS</div>
+  `;
+
+  // Incident overlay
+  const incOverlay = document.getElementById(`inc${idx}`);
+  const clearBadge = document.getElementById(`clear${idx}`);
+  if (hasInc) {
+    const inc = st.incidents[0];
+    incOverlay.classList.add('show');
+    clearBadge.classList.remove('show');
+    document.getElementById(`inc${idx}-type`).textContent =
+      (INCIDENT_ICONS[inc.type]||'❗') + ' ' + (inc.type||'INCIDENT').replace(/_/g,' ');
+    document.getElementById(`inc${idx}-auth`).textContent =
+      '▶ DISPATCH: ' + (inc.authority||'UNKNOWN');
+    document.getElementById(`inc${idx}-auth`).style.color =
+      AUTHORITY_COLORS[inc.authority] || '#ffaa00';
+    document.getElementById(`inc${idx}-conf`).textContent =
+      `SEVERITY: ${inc.severity||'—'}`;
+    const sevEl = document.getElementById(`inc${idx}-sev`);
+    sevEl.textContent  = inc.severity||'—';
+    sevEl.className    = `inc-sev ${inc.severity||'LOW'}`;
+  } else {
+    incOverlay.classList.remove('show');
+    clearBadge.classList.add('show');
+    setTimeout(()=>clearBadge.classList.remove('show'), 3000);
+  }
+
+  // Green wave badge
+  const gwBadge = document.getElementById(`gw${idx}`);
+  gwBadge.classList.toggle('show', !!st.gw);
+
+  // Redraw scene
+  drawScene(idx);
+  initParticles(idx);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTOR ROTATION — every ROTATE_SECS each camera moves to a new node
+// ─────────────────────────────────────────────────────────────────────────────
+function rotateSector(idx) {
+  // Pick a random new node, bias towards nodes with incidents
+  let newNode;
+  if (liveIncidents.length > 0 && Math.random() > 0.4) {
+    const inc = liveIncidents[Math.floor(Math.random()*liveIncidents.length)];
+    if (inc.node) newNode = inc.node;
+  }
+  if (!newNode) {
+    newNode = [
+      Math.floor(Math.random()*GRID_ROWS),
+      Math.floor(Math.random()*GRID_COLS),
+    ];
+  }
+
+  // Make sure no two cameras show the same node
+  const others = camState.filter((_,i)=>i!==idx).map(s=>s.node.join(','));
+  if (others.includes(newNode.join(','))) {
+    newNode[1] = (newNode[1] + 3) % GRID_COLS;
+  }
+
+  camState[idx].node = newNode;
+
+  // Flash transition
+  const flash = document.getElementById(`flash${idx}`);
+  flash.classList.remove('flash');
+  void flash.offsetWidth;   // reflow
+  flash.classList.add('flash');
+
+  updateFromSimData(idx);
+  updateCamUI(idx);
+
+  // Schedule next rotation
+  rotateTimers[idx] = setTimeout(() => rotateSector(idx), ROTATE_SECS * 1000);
+}
+
+// Stagger the rotations so cameras don't all switch at once
+function startRotations() {
+  for (let i=0; i<4; i++) {
+    if (rotateTimers[i]) clearTimeout(rotateTimers[i]);
+    rotateTimers[i] = setTimeout(
+      () => { rotateSector(i); },
+      i * (ROTATE_SECS*1000/4)
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAP SIM DATA → CAMERA STATE
+// ─────────────────────────────────────────────────────────────────────────────
+function updateFromSimData(idx) {
+  const st     = camState[idx];
+  const nodeKey = `${st.node[0]},${st.node[1]}`;
+
+  // Signal
+  st.signal = liveSignals[nodeKey] || 'GREEN';
+
+  // Zone (from hash of node coords)
+  const zones = ['Residential','Commercial','Industrial','Park'];
+  st.zone     = zones[(st.node[0]*7 + st.node[1]*3) % 4];
+
+  // Incidents at this node
+  st.incidents = liveIncidents.filter(inc =>
+    inc.node &&
+    Array.isArray(inc.node) &&
+    inc.node[0] === st.node[0] &&
+    inc.node[1] === st.node[1]
+  );
+
+  // Green wave
+  st.gw = liveGreenWaves.some(w =>
+    w.path_nodes && w.path_nodes.some(n => n[0]===st.node[0] && n[1]===st.node[1])
+  );
+
+  // Density (from edge densities — check edges adjacent to this node)
+  let densities = [];
+  const edgeMap = window._lastEdgeDensities || {};
+  const r = st.node[0], c = st.node[1];
+  [[r,c-1],[r,c+1],[r-1,c],[r+1,c]].forEach(([nr,nc])=>{
+    const k1 = `${r},${c}-${nr},${nc}`;
+    const k2 = `${nr},${nc}-${r},${c}`;
+    if (edgeMap[k1] !== undefined) densities.push(edgeMap[k1]);
+    if (edgeMap[k2] !== undefined) densities.push(edgeMap[k2]);
+  });
+  st.density = densities.length
+    ? densities.reduce((a,b)=>a+b,0)/densities.length
+    : 0.1 + Math.random()*0.3;
+
+  // Agents (simulated based on density)
+  st.agents = Math.floor(st.density * 40) + Math.floor(Math.random()*5);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API POLLING
+// ─────────────────────────────────────────────────────────────────────────────
+async function pollAPI() {
+  try {
+    // City snapshot
+    const [snapResp, mapResp, sentResp] = await Promise.all([
+      fetch(`${API}/api/v1/city-snapshot`),
+      fetch(`${API}/api/v1/live-map`),
+      fetch(`${API}/api/v1/sentinel`),
+    ]);
+
+    if (!snapResp.ok || !mapResp.ok) throw new Error('API down');
+
+    citySnap              = await snapResp.json();
+    const mapData         = await mapResp.json();
+    const sentData        = await sentResp.json();
+
+    liveIncidents         = sentData.active_incidents  || [];
+    liveGreenWaves        = mapData.active_green_waves || [];
+    liveSignals           = mapData.signal_states      || {};
+    window._lastEdgeDensities = mapData.edge_densities || {};
+
+    simOnline = true;
+
+    // Update city stats panel
+    _set('sp-tick',    citySnap.tick        ?? '—');
+    _set('sp-simtime', citySnap.sim_time    ?? '—');
+    _set('sp-npcs',    citySnap.active_npcs ?? '—');
+    _set('sp-emg',     citySnap.emergencies ?? '—');
+    _set('sp-gw',      citySnap.green_waves ?? '—');
+    _set('sp-cvdet',   citySnap.cv_detections ?? '—');
+
+    // Health bars
+    const gh = citySnap.grid_health  || 100;
+    const wh = citySnap.water_health || 100;
+    const ta = Math.min(100, (citySnap.traffic_avg||0) * 100);
+    _set('grid-pct',    gh.toFixed(1)+'%');
+    _set('water-pct',   wh.toFixed(1)+'%');
+    _set('traffic-pct', ta.toFixed(1)+'%');
+    _bar('grid-bar',    gh,  gh<50?'r':gh<80?'a':'g');
+    _bar('water-bar',   wh,  wh<50?'r':wh<80?'a':'g');
+    _bar('traffic-bar', ta,  ta>70?'r':ta>40?'a':'g');
+
+    // Clock
+    _set('sim-clock', citySnap.sim_time ? `SIM ${citySnap.sim_time}` : '--:--');
+    _set('sb-tick',   `TICK ${citySnap.tick ?? '—'}`);
+    _set('inc-counter', liveIncidents.length);
+
+    // Status dots
+    _dot('sb-api',  true);
+    _dot('sb-sim',  !mapData._offline);
+    _dot('sb-cv',   (citySnap.cv_detections||0) > 0);
+    _dot('sb-ml2',  liveGreenWaves.length > 0);
+    _dot('sim-dot', true);
+    _set('sim-status-txt', mapData._offline ? 'SIM FALLBACK' : 'DIGITAL TWIN LIVE');
+
+    // Update ticker
+    if (liveIncidents.length > 0) {
+      const msgs = liveIncidents.map(i=>
+        `● ${INCIDENT_ICONS[i.type]||'❗'} ${(i.type||'').replace(/_/g,' ')} @ NODE [${(i.node||[]).join(',')}] → ${i.authority||''}`
+      ).join('  ');
+      document.getElementById('ticker-txt').textContent = msgs;
+    }
+
+    // Camera node list in sidebar
+    document.getElementById('cam-node-list').innerHTML = camState.map((st,i)=>`
+      <div class="cs-row">
+        <span class="cs-label" style="font-size:9px">CAM-0${i+1}</span>
+        <span class="cs-val" style="font-size:9px">
+          [${st.node[0]},${st.node[1]}] ${st.zone.substring(0,3).toUpperCase()}
+        </span>
+      </div>
+    `).join('');
+
+    // Incident log
+    const newIncs = liveIncidents.filter(inc =>
+      !logEntries.find(e => e.id === inc.incident_id)
+    );
+    for (const inc of newIncs) {
+      logEntries.unshift({
+        id:   inc.incident_id,
+        type: inc.type,
+        auth: inc.authority,
+        sev:  inc.severity,
+        node: inc.node,
+        ts:   citySnap.sim_time || '--:--',
+      });
+    }
+    logEntries = logEntries.slice(0, 30);
+    renderLog();
+
+    // Refresh all camera states
+    for (let i=0; i<4; i++) {
+      updateFromSimData(i);
+      updateCamUI(i);
+    }
+
+  } catch(e) {
+    simOnline = false;
+    _dot('sb-api', false);
+    _set('sim-status-txt', 'BACKEND OFFLINE — START backend.py');
+    document.getElementById('sim-dot').className = 'status-dot red';
+  }
+}
+
+function renderLog() {
+  const el = document.getElementById('inc-log');
+  if (!logEntries.length) {
+    el.innerHTML = '<div style="font-family:var(--mono);font-size:10px;color:var(--txt3);padding:8px 0">No incidents yet…</div>';
+    return;
+  }
+  el.innerHTML = logEntries.map(e => {
+    const col = e.sev==='CRITICAL'?'var(--red)':e.sev==='HIGH'?'var(--amber)':'var(--green)';
+    return `<div class="log-row">
+      <div class="log-dot" style="background:${col};box-shadow:0 0 6px ${col}"></div>
+      <div class="log-body">
+        <div class="log-type">${INCIDENT_ICONS[e.type]||'❗'} ${(e.type||'').replace(/_/g,' ')}</div>
+        <div class="log-meta">${e.auth||'—'} · NODE [${(e.node||[]).join(',')}] · ${e.ts}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANIMATION LOOP
+// ─────────────────────────────────────────────────────────────────────────────
+function animLoop() {
+  for (let i=0; i<4; i++) tickParticles(i);
+  requestAnimationFrame(animLoop);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function _set(id, val) { const e=document.getElementById(id); if(e) e.textContent=val; }
+function _bar(id, pct, cls) {
+  const e=document.getElementById(id);
+  if(!e) return;
+  e.style.width = Math.max(0,Math.min(100,pct)).toFixed(1)+'%';
+  e.className = `hbar-fill ${cls}`;
+}
+function _dot(id, on) {
+  const e=document.getElementById(id);
+  if(!e) return;
+  e.className = on ? 'sb-dot' : 'sb-dot off';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Initial draw
+  for (let i=0; i<4; i++) {
+    updateCamUI(i);
+    initParticles(i);
+  }
+
+  // Start animation
+  animLoop();
+
+  // Start sector rotations (staggered)
+  startRotations();
+
+  // Start polling
+  pollAPI();
+  setInterval(pollAPI, POLL_MS);
+});
+
+// Redraw on resize
+window.addEventListener('resize', () => {
+  for (let i=0; i<4; i++) { drawScene(i); initParticles(i); }
+});
+</script>
+</body>
+</html>

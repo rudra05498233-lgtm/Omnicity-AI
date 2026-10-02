@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>OmniCity — Citizen Walker</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:     #020608;
+  --bg1:    #040c10;
+  --bg2:    #071218;
+  --bg3:    #0a1820;
+  --green:  #00ffb4;
+  --cyan:   #00c8ff;
+  --red:    #ff2a4a;
+  --amber:  #ffaa00;
+  --purple: #c060ff;
+  --txt:    #b0ccd8;
+  --txt2:   #4a7080;
+  --txt3:   #1e3a48;
+  --mono:   'Share Tech Mono', monospace;
+  --head:   'Orbitron', sans-serif;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; overflow:hidden; background:var(--bg); color:var(--txt); font-family:'Rajdhani',sans-serif; }
+
+/* scanline */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  height:44px; background:var(--bg1); border-bottom:1px solid rgba(0,255,180,0.1);
+  display:flex; align-items:center; padding:0 16px; gap:14px; flex-shrink:0;
+}
+.top-title { font-family:var(--head); font-size:11px; font-weight:900; letter-spacing:.15em; color:var(--green); }
+.top-citizen { font-family:var(--mono); font-size:10px; color:var(--cyan); }
+.top-node { font-family:var(--mono); font-size:12px; color:var(--green); margin-left:auto; letter-spacing:.08em; }
+.top-status { font-family:var(--mono); font-size:9px; color:var(--txt2); }
+
+/* ── MAIN LAYOUT ── */
+.layout { display:flex; height:calc(100vh - 44px); }
+
+/* ── GRID CANVAS ── */
+.map-wrap {
+  flex:1; position:relative; overflow:hidden; background:#030a0f;
+  border-right:1px solid rgba(0,255,180,0.08);
+}
+#walker-canvas { display:block; width:100%; height:100%; }
+
+/* ── SIDE PANEL ── */
+.side {
+  width:240px; flex-shrink:0; background:var(--bg1);
+  display:flex; flex-direction:column; overflow-y:auto; overflow-x:hidden;
+}
+.side::-webkit-scrollbar { width:3px; }
+.side::-webkit-scrollbar-thumb { background:var(--txt3); }
+
+.side-section { padding:12px 14px; border-bottom:1px solid var(--txt3); }
+.sec-title {
+  font-family:var(--head); font-size:8px; font-weight:700; letter-spacing:.18em;
+  color:var(--txt2); text-transform:uppercase; margin-bottom:8px;
+}
+
+/* ── NODE INFO ── */
+.info-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+.info-label { font-family:var(--mono); font-size:9px; color:var(--txt2); }
+.info-val   { font-family:var(--mono); font-size:10px; color:var(--txt); font-weight:700; }
+.info-val.green  { color:var(--green); }
+.info-val.red    { color:var(--red); }
+.info-val.amber  { color:var(--amber); }
+.info-val.cyan   { color:var(--cyan); }
+.info-val.purple { color:var(--purple); }
+
+/* ── SIGNAL LIGHTS ── */
+.signal-row { display:flex; align-items:center; gap:5px; margin-top:4px; }
+.sig { width:9px; height:9px; border-radius:50%; opacity:.2; }
+.sig.on { opacity:1; }
+.sig.r { background:var(--red);   box-shadow:0 0 8px var(--red); }
+.sig.y { background:var(--amber); box-shadow:0 0 8px var(--amber); }
+.sig.g { background:var(--green); box-shadow:0 0 8px var(--green); }
+.sig-lbl { font-family:var(--mono); font-size:9px; color:var(--txt2); }
+
+/* ── INCIDENT BOX ── */
+.inc-item {
+  padding:6px 8px; margin-bottom:5px;
+  background:rgba(255,42,74,0.06); border:1px solid rgba(255,42,74,0.2);
+  border-radius:3px;
+}
+.inc-type { font-family:var(--mono); font-size:10px; color:var(--red); }
+.inc-meta { font-family:var(--mono); font-size:9px; color:var(--txt2); margin-top:2px; }
+.no-inc { font-family:var(--mono); font-size:10px; color:var(--green); }
+
+/* ── CONTROLS ── */
+.ctrl-grid {
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  gap:4px; margin-top:6px;
+}
+.ctrl-btn {
+  padding:8px 0; background:rgba(0,255,180,0.06);
+  border:1px solid rgba(0,255,180,0.15); border-radius:3px;
+  font-family:var(--head); font-size:11px; color:var(--green);
+  cursor:pointer; text-align:center; transition:background .1s;
+  user-select:none;
+}
+.ctrl-btn:hover  { background:rgba(0,255,180,0.14); }
+.ctrl-btn:active { background:rgba(0,255,180,0.22); }
+.ctrl-btn.center { background:rgba(0,200,255,0.06); color:var(--cyan); border-color:rgba(0,200,255,0.2); cursor:default; }
+
+/* ── CHHAYA STATUS ── */
+.chhaya-status {
+  padding:8px 10px;
+  background:rgba(0,200,255,0.06); border:1px solid rgba(0,200,255,0.15);
+  border-radius:3px; font-family:var(--mono); font-size:10px; color:var(--cyan);
+}
+.chhaya-status.danger   { background:rgba(255,42,74,0.08); border-color:rgba(255,42,74,0.25); color:var(--red); }
+.chhaya-status.warning  { background:rgba(255,170,0,0.08); border-color:rgba(255,170,0,0.2);  color:var(--amber); }
+
+/* ── DENSITY BAR ── */
+.density-bar-wrap { height:4px; background:var(--txt3); border-radius:2px; margin-top:4px; }
+.density-bar-fill { height:100%; border-radius:2px; transition:width .4s, background .4s; }
+
+/* ── NEARBY LOG ── */
+.log-line { font-family:var(--mono); font-size:9px; color:var(--txt2); padding:2px 0; }
+
+/* ── GPS ── */
+.gps-line { font-family:var(--mono); font-size:9px; color:rgba(0,255,180,0.35); margin-top:4px; }
+
+/* ── DANGER PANEL ── */
+.danger-panel {
+  padding:10px 12px; border-radius:4px; margin-bottom:0;
+  border:1px solid rgba(0,255,180,0.15);
+  background:rgba(0,255,180,0.04);
+  transition:background .3s, border-color .3s;
+}
+.danger-panel.warn  { background:rgba(255,170,0,0.07); border-color:rgba(255,170,0,0.3); }
+.danger-panel.alert { background:rgba(255,42,74,0.08); border-color:rgba(255,42,74,0.35); animation:dangerpulse 1s ease-in-out infinite; }
+@keyframes dangerpulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 18px rgba(255,42,74,.3)} }
+
+.danger-meter-wrap { height:6px; background:rgba(255,255,255,.07); border-radius:3px; margin:6px 0; overflow:hidden; }
+.danger-meter-fill { height:100%; border-radius:3px; transition:width .4s ease, background .4s ease; }
+
+/* ── SOS BUTTON ── */
+.sos-btn {
+  width:100%; padding:12px 0; margin-top:8px;
+  background:rgba(255,42,74,0.12); border:1.5px solid rgba(255,42,74,0.5);
+  border-radius:5px; cursor:pointer;
+  font-family:'Orbitron',sans-serif; font-size:11px; font-weight:900;
+  letter-spacing:.2em; color:#ff2a4a;
+  text-shadow:0 0 12px rgba(255,42,74,.5);
+  transition:background .15s, box-shadow .15s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.sos-btn:hover  { background:rgba(255,42,74,0.22); box-shadow:0 0 20px rgba(255,42,74,.3); }
+.sos-btn:active { background:rgba(255,42,74,0.35); }
+.sos-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+/* ── SOS MODAL ── */
+.sos-modal {
+  position:fixed; inset:0; z-index:1000;
+  background:rgba(2,6,8,0.92); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .3s;
+}
+.sos-modal.open { opacity:1; pointer-events:all; }
+.sos-box {
+  width:min(480px,95vw); max-height:90vh; overflow-y:auto;
+  background:#040c10; border:1px solid rgba(255,42,74,.4);
+  border-radius:8px; padding:0;
+  box-shadow:0 0 60px rgba(255,42,74,.2);
+}
+.sos-box::-webkit-scrollbar { width:3px; }
+.sos-box::-webkit-scrollbar-thumb { background:rgba(255,42,74,.3); }
+
+.sos-header {
+  padding:14px 18px; border-bottom:1px solid rgba(255,42,74,.2);
+  display:flex; align-items:center; gap:10px;
+  background:rgba(255,42,74,.06);
+}
+.sos-header-title {
+  font-family:'Orbitron',sans-serif; font-size:13px; font-weight:900;
+  letter-spacing:.15em; color:#ff2a4a;
+  text-shadow:0 0 16px rgba(255,42,74,.6);
+}
+.sos-close {
+  margin-left:auto; background:none; border:1px solid rgba(255,42,74,.3);
+  color:#ff2a4a; border-radius:3px; padding:2px 10px; cursor:pointer;
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+}
+.sos-close:hover { background:rgba(255,42,74,.15); }
+
+.sos-body { padding:16px 18px; }
+
+.sos-vehicles {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;
+}
+.sos-vehicle {
+  padding:8px 10px; border-radius:4px;
+  border:1px solid rgba(0,200,255,.2); background:rgba(0,200,255,.06);
+  font-family:'Share Tech Mono',monospace; font-size:9px; color:#00c8ff;
+  line-height:1.7;
+}
+.sos-vehicle.police { border-color:rgba(0,200,255,.3); }
+.sos-vehicle.amb    { border-color:rgba(0,255,180,.3); background:rgba(0,255,180,.05); color:#00ffb4; }
+
+.sos-guidance {
+  background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.07);
+  border-radius:4px; padding:12px 14px;
+}
+.sos-guidance-title {
+  font-family:'Orbitron',sans-serif; font-size:8px; font-weight:700;
+  letter-spacing:.18em; color:#ffaa00; margin-bottom:8px;
+}
+.guidance-step {
+  display:flex; gap:8px; padding:5px 0; border-bottom:1px solid rgba(255,255,255,.05);
+  font-size:11px; color:#b0ccd8; line-height:1.5;
+}
+.step-num {
+  font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700;
+  color:#ffaa00; flex-shrink:0; min-width:18px;
+}
+.sos-donot {
+  margin-top:10px; padding:7px 10px; border-radius:3px;
+  background:rgba(255,42,74,.07); border-left:2px solid #ff2a4a;
+  font-family:'Share Tech Mono',monospace; font-size:9px; color:#ff2a4a; line-height:1.6;
+}
+.sos-reassurance {
+  margin-top:10px; padding:7px 10px; border-radius:3px;
+  background:rgba(0,255,180,.05); border-left:2px solid #00ffb4;
+  font-family:'Share Tech Mono',monospace; font-size:9px; color:#00ffb4; line-height:1.6;
+}
+.sos-loading {
+  text-align:center; padding:24px 0;
+  font-family:'Share Tech Mono',monospace; font-size:10px; color:#4a7080;
+  letter-spacing:.1em;
+}
+.sos-spinner {
+  width:28px; height:28px; border:2px solid rgba(255,42,74,.2);
+  border-top-color:#ff2a4a; border-radius:50%;
+  animation:spin .7s linear infinite; margin:0 auto 12px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ── AI-2 DANGER PANEL ── */
+.ai2-panel {
+  padding:10px 12px;
+  background:rgba(0,200,255,0.05);
+  border:1px solid rgba(0,200,255,0.15);
+  border-radius:4px;
+  transition:background .3s, border-color .3s;
+}
+.ai2-panel.warning {
+  background:rgba(255,170,0,0.07);
+  border-color:rgba(255,170,0,0.25);
+}
+.ai2-panel.danger {
+  background:rgba(255,42,74,0.09);
+  border-color:rgba(255,42,74,0.3);
+  animation:dangerpulse 1.2s ease-in-out infinite;
+}
+@keyframes dangerpulse {
+  0%,100%{box-shadow:none}
+  50%{box-shadow:0 0 18px rgba(255,42,74,0.3)}
+}
+.danger-num {
+  font-family:var(--head);
+  font-size:26px;
+  font-weight:900;
+  color:var(--green);
+  line-height:1;
+  transition:color .3s;
+}
+.danger-bar-wrap { height:5px; background:var(--txt3); border-radius:3px; margin:6px 0; }
+.danger-bar-fill {
+  height:100%; border-radius:3px;
+  background:var(--green);
+  transition:width .5s ease, background .5s ease;
+}
+.ai2-msg {
+  font-family:var(--mono); font-size:9px; color:var(--txt2);
+  line-height:1.6; margin-top:4px;
+  transition:color .3s;
+}
+.ai2-row {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-top:5px; gap:6px;
+}
+.ai2-tag {
+  font-family:var(--mono); font-size:8px; font-weight:700;
+  padding:2px 7px; border-radius:2px; letter-spacing:.08em;
+}
+.ai2-tag.ok     { background:rgba(0,255,180,.1); color:var(--green); border:1px solid rgba(0,255,180,.25); }
+.ai2-tag.warn   { background:rgba(255,170,0,.1);  color:var(--amber); border:1px solid rgba(255,170,0,.25); }
+.ai2-tag.alert  { background:rgba(255,42,74,.12); color:var(--red);   border:1px solid rgba(255,42,74,.3); }
+
+/* ── SOS HELP BUTTON ── */
+.sos-btn {
+  width:100%; padding:13px 0;
+  background:rgba(255,42,74,0.12);
+  border:2px solid rgba(255,42,74,0.4);
+  border-radius:5px;
+  font-family:var(--head); font-size:12px; font-weight:900;
+  color:var(--red); letter-spacing:.12em;
+  cursor:pointer; text-align:center;
+  transition:all .15s;
+  user-select:none;
+  position:relative; overflow:hidden;
+}
+.sos-btn:hover  {
+  background:rgba(255,42,74,0.2);
+  box-shadow:0 0 20px rgba(255,42,74,0.3);
+}
+.sos-btn:active { transform:scale(.98); }
+.sos-btn.active {
+  background:rgba(255,42,74,0.18);
+  border-color:var(--red);
+  animation:sosblink 1s ease-in-out infinite;
+}
+@keyframes sosblink{0%,100%{box-shadow:0 0 8px rgba(255,42,74,.2)}50%{box-shadow:0 0 28px rgba(255,42,74,.6)}}
+.sos-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+/* ── SOS AI GUIDE PANEL ── */
+.sos-guide {
+  display:none;
+  padding:10px 12px;
+  background:rgba(255,42,74,0.06);
+  border:1px solid rgba(255,42,74,0.2);
+  border-radius:4px;
+  font-family:var(--mono); font-size:9px;
+  color:var(--txt2); line-height:1.8;
+}
+.sos-guide.show { display:block; }
+.sos-guide-step {
+  padding:3px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.sos-guide-step:last-child { border-bottom:none; }
+.sos-dispatch-row {
+  display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px;
+}
+.dispatch-tag {
+  font-family:var(--mono); font-size:8px;
+  padding:2px 8px; border-radius:2px;
+  background:rgba(0,200,255,.1); color:var(--cyan);
+  border:1px solid rgba(0,200,255,.25);
+}
+.dispatch-tag.police { background:rgba(0,200,255,.1); color:var(--cyan); border-color:rgba(0,200,255,.3); }
+.dispatch-tag.ems    { background:rgba(0,255,180,.1); color:var(--green); border-color:rgba(0,255,180,.3); }
+.dispatch-tag.gw     { color:var(--green); border-color:rgba(0,255,180,.3); background:rgba(0,255,180,.08); }
+
+/* ── ARRIVAL TOAST ── */
+.arrival-toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+  z-index:10000; opacity:0;
+  background:#040c10; border-radius:8px; padding:14px 20px;
+  display:flex; align-items:center; gap:12px;
+  pointer-events:none;
+  transition:opacity .35s ease, transform .35s ease;
+  min-width:260px; max-width:360px;
+}
+.arrival-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.arrival-toast.police { border:1px solid rgba(0,200,255,.5); box-shadow:0 0 28px rgba(0,200,255,.2); }
+.arrival-toast.amb    { border:1px solid rgba(0,255,180,.5); box-shadow:0 0 28px rgba(0,255,180,.2); }
+.toast-icon { font-size:22px; flex-shrink:0; }
+.toast-body { display:flex; flex-direction:column; gap:2px; }
+.toast-title {
+  font-family:'Orbitron',sans-serif; font-size:10px; font-weight:900;
+  letter-spacing:.12em;
+}
+.arrival-toast.police .toast-title { color:#00c8ff; }
+.arrival-toast.amb    .toast-title { color:#00ffb4; }
+.toast-msg { font-family:'Share Tech Mono',monospace; font-size:9px; color:#b0ccd8; line-height:1.5; }
+
+.hint-bar {
+  position:absolute; bottom:0; left:0; right:0;
+  padding:4px 10px;
+  background:rgba(4,12,16,0.85); border-top:1px solid var(--txt3);
+  font-family:var(--mono); font-size:9px; color:var(--txt2);
+  letter-spacing:.04em; text-align:center; pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="top-title">CITIZEN WALKER</div>
+  <div class="top-citizen" id="top-citizen">Loading…</div>
+  <div class="top-status" id="top-status">● LIVE</div>
+  <div class="top-node" id="top-node">NODE [—, —]</div>
+</div>
+
+<div class="layout">
+  <!-- MAP -->
+  <div class="map-wrap">
+    <canvas id="walker-canvas"></canvas>
+    <div class="hint-bar">WASD or ↑↓←→ to move &nbsp;·&nbsp; Click any node to jump &nbsp;·&nbsp; Your position broadcasts live to Chhaya</div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side">
+
+    <!-- Current Node Info -->
+    <div class="side-section">
+      <div class="sec-title">Current Node</div>
+      <div class="info-row"><span class="info-label">NODE</span>    <span class="info-val cyan"    id="si-node">—</span></div>
+      <div class="info-row"><span class="info-label">ZONE</span>    <span class="info-val"         id="si-zone">—</span></div>
+      <div class="info-row"><span class="info-label">DENSITY</span> <span class="info-val amber"   id="si-density">—</span></div>
+      <div class="info-row"><span class="info-label">AGENTS</span>  <span class="info-val"         id="si-agents">—</span></div>
+      <div class="density-bar-wrap">
+        <div class="density-bar-fill" id="si-density-bar" style="width:0%;background:var(--green)"></div>
+      </div>
+      <div style="margin-top:8px">
+        <div class="info-label" style="margin-bottom:4px">TRAFFIC SIGNAL</div>
+        <div class="signal-row">
+          <div class="sig r" id="sig-r"></div>
+          <div class="sig y" id="sig-y"></div>
+          <div class="sig g" id="sig-g"></div>
+          <span class="sig-lbl" id="sig-txt">—</span>
+        </div>
+      </div>
+      <div class="gps-line" id="si-gps">—</div>
+    </div>
+
+    <!-- Incidents at Node -->
+    <div class="side-section">
+      <div class="sec-title">Incidents at Node</div>
+      <div id="si-incidents"><div class="no-inc">◉ SECTOR CLEAR</div></div>
+    </div>
+
+    <!-- Chhaya AI-2 Danger Panel -->
+    <div class="side-section">
+      <div class="sec-title">AI-2 Danger Status</div>
+      <div class="danger-panel" id="danger-panel">
+        <!-- Danger level row -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--txt2)">DANGER LEVEL</span>
+          <span style="font-family:var(--mono);font-size:14px;font-weight:900;color:var(--green)" id="danger-num">0</span>
+        </div>
+        <div class="danger-meter-wrap">
+          <div class="danger-meter-fill" id="danger-bar" style="width:0%;background:var(--green)"></div>
+        </div>
+        <!-- Alert message -->
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt2);margin:5px 0;line-height:1.6" id="danger-msg">Awaiting escort activation…</div>
+        <!-- Action + Stalker -->
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px">
+          <span style="color:var(--txt2)">ACTION: <span id="danger-action" style="color:var(--cyan)">—</span></span>
+          <span style="color:var(--txt2)">STALKER: <span id="danger-stalker" style="color:var(--red)">—</span></span>
+        </div>
+        <!-- SOS Button -->
+        <button class="sos-btn" id="sos-btn" onclick="triggerSOS()">
+          🆘 EMERGENCY HELP
+        </button>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="side-section">
+      <div class="sec-title">Movement Controls</div>
+      <div class="ctrl-grid">
+        <div></div>
+        <div class="ctrl-btn" id="btn-up"    onclick="move(-1,0)">↑</div>
+        <div></div>
+        <div class="ctrl-btn" id="btn-left"  onclick="move(0,-1)">←</div>
+        <div class="ctrl-btn center">[YOU]</div>
+        <div class="ctrl-btn" id="btn-right" onclick="move(0,1)">→</div>
+        <div></div>
+        <div class="ctrl-btn" id="btn-down"  onclick="move(1,0)">↓</div>
+        <div></div>
+      </div>
+    </div>
+
+    <!-- Nearby activity log -->
+    <div class="side-section" style="flex:1">
+      <div class="sec-title">Nearby Activity</div>
+      <div id="nearby-log"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ────────────────────────────────────────────────────────────────────
+// CONFIG — read citizen from localStorage
+// ────────────────────────────────────────────────────────────────────
+const ROWS = 20, COLS = 20;
+const INC_ICONS = {
+  'Crime_Weapon':'🔫','Accident':'🚗','Fire_Smoke':'🔥',
+  'Infra_PipeBurst':'💧','Infra_GridBlackout':'⚡',
+  'Accident_Debris':'⚠️','Crime_Theft':'🔓',
+};
+
+let API     = 'http://localhost:8000';
+let citizen = null;
+let pos     = [10, 10];
+
+let edgeDensities = {};
+let signalStates  = {};
+let incidents     = [];
+let greenWaves    = [];
+let sosVehicles   = [];   // vehicles dispatched by SOS — shown on map until arrival
+
+// Single BroadcastChannel — send only, dashboard listens
+let channel = null;
+try { channel = new BroadcastChannel('omni_walker'); } catch(e){}
+
+// ────────────────────────────────────────────────────────────────────
+// CANVAS
+// ────────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('walker-canvas');
+const ctx    = canvas.getContext('2d');
+
+function sizeCanvas() {
+  const wrap = canvas.parentElement;
+  // Use offsetWidth/Height — reliable after layout
+  const w = wrap.offsetWidth  || 660;
+  const h = wrap.offsetHeight || 600;
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width  = w;
+    canvas.height = h;
+  }
+}
+
+function nodeToPixel(r, c) {
+  const PAD   = 30;
+  const cellW = (canvas.width  - PAD * 2) / (COLS - 1);
+  const cellH = (canvas.height - PAD * 2) / (ROWS - 1);
+  return { x: PAD + c * cellW, y: PAD + r * cellH };
+}
+
+function densityAtNode(r, c) {
+  const vals = [];
+  [[r,c-1],[r,c+1],[r-1,c],[r+1,c]].forEach(([nr,nc]) => {
+    if (nr < 0 || nc < 0 || nr >= ROWS || nc >= COLS) return;
+    const k1 = `${r},${c}-${nr},${nc}`;
+    const k2 = `${nr},${nc}-${r},${c}`;
+    if (edgeDensities[k1] != null) vals.push(edgeDensities[k1]);
+    else if (edgeDensities[k2] != null) vals.push(edgeDensities[k2]);
+  });
+  return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0.15;
+}
+
+function denColor(d) {
+  return d > 0.7 ? '#ef4444' : d >= 0.3 ? '#eab308' : '#10b981';
+}
+
+function zoneColor(r, c) {
+  return ['rgba(0,200,255,0.04)','rgba(160,60,255,0.05)',
+          'rgba(255,120,0,0.05)','rgba(0,255,120,0.04)',
+          'rgba(0,80,40,0.05)'][(r*7+c*3)%5];
+}
+
+function draw() {
+  sizeCanvas();
+  const W = canvas.width, H = canvas.height;
+  if (W < 10 || H < 10) return;    // not laid out yet
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur  = 0;
+
+  // Background
+  ctx.fillStyle = '#030a0f';
+  ctx.fillRect(0, 0, W, H);
+
+  const p00 = nodeToPixel(0,0), p11 = nodeToPixel(1,1);
+  const cellW = p11.x - p00.x, cellH = p11.y - p00.y;
+
+  // ── Zone fills ───────────────────────────────────────────────────
+  for (let r = 0; r < ROWS-1; r++) {
+    for (let c = 0; c < COLS-1; c++) {
+      const p = nodeToPixel(r, c);
+      ctx.fillStyle = zoneColor(r, c);
+      ctx.fillRect(p.x, p.y, cellW, cellH);
+    }
+  }
+
+  // ── Edges (roads) ───────────────────────────────────────────────
+  ctx.lineCap = 'round';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const p = nodeToPixel(r, c);
+      if (c < COLS-1) {
+        const k = `${r},${c}-${r},${c+1}`;
+        const d = edgeDensities[k] ?? edgeDensities[`${r},${c+1}-${r},${c}`] ?? 0.15;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(nodeToPixel(r, c+1).x, p.y);
+        ctx.strokeStyle = denColor(d);
+        ctx.lineWidth   = 1.5 + d * 2;
+        ctx.globalAlpha = 0.6;
+        ctx.stroke();
+      }
+      if (r < ROWS-1) {
+        const k = `${r},${c}-${r+1},${c}`;
+        const d = edgeDensities[k] ?? edgeDensities[`${r+1},${c}-${r},${c}`] ?? 0.15;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x, nodeToPixel(r+1, c).y);
+        ctx.strokeStyle = denColor(d);
+        ctx.lineWidth   = 1.5 + d * 2;
+        ctx.globalAlpha = 0.6;
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // ── Green waves ─────────────────────────────────────────────────
+  greenWaves.forEach(wave => {
+    const nodes = wave.path_nodes || [];
+    for (let i = 0; i < nodes.length-1; i++) {
+      const p1 = nodeToPixel(nodes[i][0], nodes[i][1]);
+      const p2 = nodeToPixel(nodes[i+1][0], nodes[i+1][1]);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = '#00ff88';
+      ctx.lineWidth   = 3.5;
+      ctx.globalAlpha = 0.9;
+      ctx.stroke();
+    }
+  });
+  ctx.globalAlpha = 1;
+
+  // ── Incident halos ───────────────────────────────────────────────
+  incidents.forEach(inc => {
+    if (!inc.node || !Array.isArray(inc.node)) return;
+    const p   = nodeToPixel(inc.node[0], inc.node[1]);
+    const col = inc.severity === 'CRITICAL' ? '#ff2a4a' : '#ffaa00';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 11, 0, Math.PI*2);
+    ctx.fillStyle = col + '28';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4.5, 0, Math.PI*2);
+    ctx.fillStyle = col;
+    ctx.fill();
+  });
+
+  // ── Signal dots ─────────────────────────────────────────────────
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const p   = nodeToPixel(r, c);
+      const sig = signalStates[`${r},${c}`] || 'GREEN';
+      const col = sig === 'RED' ? '#ff2a4a' : sig === 'YELLOW' ? '#ffaa00' : '#00ffb4';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+      ctx.fillStyle = '#0a1820';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
+      ctx.fillStyle = col;
+      ctx.fill();
+    }
+  }
+
+  // ── Player avatar ────────────────────────────────────────────────
+  const pp = nodeToPixel(pos[0], pos[1]);
+
+  // Pulse ring
+  ctx.beginPath();
+  ctx.arc(pp.x, pp.y, 13, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(0,200,255,0.2)';
+  ctx.lineWidth   = 1;
+  ctx.stroke();
+
+  // CV2 corner brackets
+  const sz = 15;
+  ctx.strokeStyle = '#00c8ff';
+  ctx.lineWidth   = 2;
+  [[[-1,-1],[1,-1],[-1,1],[1,1]]].flat().forEach(([sx,sy]) => {
+    const ox = pp.x + sx*sz, oy = pp.y + sy*sz;
+    ctx.beginPath();
+    ctx.moveTo(ox - sx*5, oy);
+    ctx.lineTo(ox, oy);
+    ctx.lineTo(ox, oy - sy*5);
+    ctx.stroke();
+  });
+
+  // Glow dot
+  ctx.shadowBlur  = 14;
+  ctx.shadowColor = '#00c8ff';
+  ctx.beginPath();
+  ctx.arc(pp.x, pp.y, 5.5, 0, Math.PI*2);
+  ctx.fillStyle = '#00c8ff';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Name tag
+  const name = citizen ? (citizen.name||'YOU').split(' ')[0].toUpperCase().substring(0,10) : 'YOU';
+  ctx.font      = 'bold 9px "Share Tech Mono", monospace';
+  ctx.fillStyle = '#00c8ff';
+  ctx.textAlign = 'center';
+  ctx.fillText(name, pp.x, pp.y - 20);
+
+  // Coords tag
+  ctx.font      = '9px "Share Tech Mono", monospace';
+  ctx.fillStyle = 'rgba(0,200,255,0.55)';
+  ctx.fillText(`[${pos[0]}, ${pos[1]}]`, pp.x, pp.y + 20);
+
+  // ── SOS Dispatched Vehicles ─────────────────────────────────────────
+  const now = Date.now();
+  // Detect arrivals BEFORE splicing so we can notify on the exact frame
+  sosVehicles.forEach(v => {
+    if (!v.arrived) {
+      const elapsed = (now - v.startAt) / 1000;
+      if (elapsed >= v.eta_seconds) {
+        v.arrived = true;
+        showArrivalToast(v.type);
+      }
+    }
+  });
+  // Filter expired vehicles in-place (splice) so push override is preserved
+  for (let i = sosVehicles.length - 1; i >= 0; i--) {
+    if (now >= sosVehicles[i].expireAt) sosVehicles.splice(i, 1);
+  }
+
+  // ── Draw green wave corridors first (under vehicles) ────────────────
+  sosVehicles.forEach(v => {
+    const route = v.route_path;
+    if (!route || route.length < 2) return;
+    const elapsed   = (now - v.startAt) / 1000;
+    const progress  = Math.min(1, elapsed / Math.max(1, v.eta_seconds));
+    const reachedIdx = Math.floor(progress * (route.length - 1));
+    const isPolice  = v.type === 'POLICE';
+    const routeCol  = isPolice ? '#00c8ff' : '#00ffb4';
+    const pulseAmt  = 0.5 + 0.5 * Math.sin(now / 180);   // 0.5–1.0 pulse
+
+    // Draw the full corridor dimly
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let i = 0; i < route.length - 1; i++) {
+      const p1 = nodeToPixel(route[i][0],   route[i][1]);
+      const p2 = nodeToPixel(route[i+1][0], route[i+1][1]);
+      const isPassed = i < reachedIdx;
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = routeCol;
+      ctx.lineWidth   = isPassed ? 2 : 4;
+      ctx.globalAlpha = isPassed ? 0.12 : (0.45 + 0.3 * pulseAmt);
+      ctx.shadowBlur  = isPassed ? 0 : 8;
+      ctx.shadowColor = routeCol;
+      ctx.stroke();
+    }
+    ctx.shadowBlur  = 0;
+    ctx.globalAlpha = 1;
+
+    // Draw signal-forced dots along the remaining path
+    for (let i = reachedIdx; i < route.length; i++) {
+      const dp = nodeToPixel(route[i][0], route[i][1]);
+      ctx.beginPath();
+      ctx.arc(dp.x, dp.y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle   = routeCol;
+      ctx.globalAlpha = 0.7 + 0.3 * pulseAmt;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  });
+
+  // ── Draw vehicle icons moving along their routes ─────────────────────
+  sosVehicles.forEach(v => {
+    const elapsed  = (now - v.startAt) / 1000;
+    const progress = Math.min(1, elapsed / Math.max(1, v.eta_seconds));
+
+    // Interpolate canvas position: use route_path if available, else lerp origin→pos
+    let cr, cc;
+    const route = v.route_path;
+    if (route && route.length >= 2) {
+      const fi = progress * (route.length - 1);
+      const i0 = Math.floor(fi), i1 = Math.min(route.length - 1, i0 + 1);
+      const t  = fi - i0;
+      cr = route[i0][0] + (route[i1][0] - route[i0][0]) * t;
+      cc = route[i0][1] + (route[i1][1] - route[i0][1]) * t;
+    } else {
+      const or = v.origin_node[0], oc = v.origin_node[1];
+      cr = or + (pos[0] - or) * progress;
+      cc = oc + (pos[1] - oc) * progress;
+    }
+
+    const vp      = nodeToPixel(cr, cc);
+    const isPolice = v.type === 'POLICE';
+    const vcol    = isPolice ? '#00c8ff' : '#00ffb4';
+    const vemoji  = isPolice ? '🚔' : '🚑';
+
+    // Glow halo
+    ctx.beginPath();
+    ctx.arc(vp.x, vp.y, 14, 0, Math.PI*2);
+    ctx.fillStyle   = vcol + '22';
+    ctx.fill();
+    ctx.shadowBlur  = 16;
+    ctx.shadowColor = vcol;
+    ctx.beginPath();
+    ctx.arc(vp.x, vp.y, 8, 0, Math.PI*2);
+    ctx.fillStyle   = vcol + '55';
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+
+    // Vehicle emoji
+    ctx.font      = '14px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(vemoji, vp.x, vp.y + 5);
+
+    // Label
+    ctx.font      = 'bold 8px "Share Tech Mono", monospace';
+    ctx.fillStyle = vcol;
+    ctx.fillText(v.type, vp.x, vp.y - 16);
+
+    // ETA countdown
+    const remaining = Math.max(0, Math.ceil(v.eta_seconds - elapsed));
+    ctx.font      = '8px "Share Tech Mono", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText(`~${remaining}s`, vp.x, vp.y + 22);
+  });
+
+  // ── SOS pulsing ring on player when vehicles are en route ────────────
+  if (sosVehicles.length > 0) {
+    const pulse = 18 + 5 * Math.sin(now / 160);
+    ctx.beginPath();
+    ctx.arc(pp.x, pp.y, pulse, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(255,42,74,0.7)';
+    ctx.lineWidth   = 2;
+    ctx.shadowBlur  = 12;
+    ctx.shadowColor = '#ff2a4a';
+    ctx.stroke();
+    ctx.shadowBlur  = 0;
+  }
+  ctx.globalAlpha = 1;
+  const fog = ctx.createRadialGradient(pp.x, pp.y, 50, pp.x, pp.y, 260);
+  fog.addColorStop(0, 'rgba(0,0,0,0)');
+  fog.addColorStop(1, 'rgba(3,10,15,0.5)');
+  ctx.fillStyle = fog;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ────────────────────────────────────────────────────────────────────
+// MOVEMENT
+// ────────────────────────────────────────────────────────────────────
+function move(dr, dc) {
+  const nr = Math.max(0, Math.min(ROWS-1, pos[0]+dr));
+  const nc = Math.max(0, Math.min(COLS-1, pos[1]+dc));
+  if (nr === pos[0] && nc === pos[1]) return;
+  pos = [nr, nc];
+  onMove();
+}
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx   = (e.clientX - rect.left) * (canvas.width  / rect.width);
+  const my   = (e.clientY - rect.top)  * (canvas.height / rect.height);
+  const PAD  = 30;
+  const cellW = (canvas.width  - PAD*2) / (COLS-1);
+  const cellH = (canvas.height - PAD*2) / (ROWS-1);
+  const c = Math.round((mx - PAD) / cellW);
+  const r = Math.round((my - PAD) / cellH);
+  if (r >= 0 && r < ROWS && c >= 0 && c < COLS) { pos = [r, c]; onMove(); }
+});
+
+document.addEventListener('keydown', e => {
+  if (['ArrowUp',   'w','W'].includes(e.key)) { e.preventDefault(); move(-1, 0); }
+  if (['ArrowDown', 's','S'].includes(e.key)) { e.preventDefault(); move( 1, 0); }
+  if (['ArrowLeft', 'a','A'].includes(e.key)) { e.preventDefault(); move( 0,-1); }
+  if (['ArrowRight','d','D'].includes(e.key)) { e.preventDefault(); move( 0, 1); }
+});
+
+function onMove() {
+  try {
+    localStorage.setItem('omni_walker_node', JSON.stringify(pos));
+    if (channel) channel.postMessage({ type: 'MOVE', node: pos });
+  } catch(e) {}
+  document.getElementById('top-node').textContent = `NODE [${pos[0]}, ${pos[1]}]`;
+  draw();
+  updateSidePanel();
+  // Trigger AI-2 telemetry on every move if chhaya active
+  if (chhayaActive) sendTelemetry();
+}
+
+// ────────────────────────────────────────────────────────────────────
+// SIDE PANEL
+// ────────────────────────────────────────────────────────────────────
+const ZONE_LABELS = ['Residential','Commercial','Industrial','Civic','Park'];
+
+function updateSidePanel() {
+  const [r, c]  = pos;
+  const density = densityAtNode(r, c);
+  const signal  = signalStates[`${r},${c}`] || 'GREEN';
+  const zone    = ZONE_LABELS[(r*7+c*3)%5];
+  const dpct    = Math.round(density * 100);
+  const dcol    = dpct > 70 ? 'red' : dpct > 30 ? 'amber' : 'green';
+
+  document.getElementById('si-node').textContent    = `[${r}, ${c}]`;
+  document.getElementById('si-zone').textContent    = zone;
+  document.getElementById('si-density').textContent = `${dpct}%`;
+  document.getElementById('si-density').className   = `info-val ${dcol}`;
+  document.getElementById('si-agents').textContent  = Math.floor(density * 40);
+
+  const bar = document.getElementById('si-density-bar');
+  bar.style.width      = dpct + '%';
+  bar.style.background = dpct > 70 ? 'var(--red)' : dpct > 30 ? 'var(--amber)' : 'var(--green)';
+
+  document.getElementById('sig-r').className = `sig r${signal==='RED'   ?' on':''}`;
+  document.getElementById('sig-y').className = `sig y${signal==='YELLOW'?' on':''}`;
+  document.getElementById('sig-g').className = `sig g${signal==='GREEN' ?' on':''}`;
+  document.getElementById('sig-txt').textContent = signal;
+
+  const lat = (25.317 + r * 0.003).toFixed(5);
+  const lon = (82.973 + c * 0.003).toFixed(5);
+  document.getElementById('si-gps').textContent = `${lat}°N  ${lon}°E`;
+
+  // Incidents at this node
+  const here = incidents.filter(i =>
+    i.node && Array.isArray(i.node) && i.node[0]===r && i.node[1]===c
+  );
+  document.getElementById('si-incidents').innerHTML = here.length === 0
+    ? '<div class="no-inc">◉ SECTOR CLEAR</div>'
+    : here.map(i => `<div class="inc-item">
+        <div class="inc-type">${INC_ICONS[i.type]||'❗'} ${(i.type||'').replace(/_/g,' ')}</div>
+        <div class="inc-meta">${i.severity||'—'} · ${i.authority||'—'}</div>
+      </div>`).join('');
+
+  // Nearby (within 2 nodes)
+  const nearby = incidents.filter(i =>
+    i.node && Array.isArray(i.node) &&
+    Math.abs(i.node[0]-r)<=2 && Math.abs(i.node[1]-c)<=2 &&
+    !(i.node[0]===r && i.node[1]===c)
+  );
+  const hasGW = greenWaves.some(w =>
+    (w.path_nodes||[]).some(n => Math.abs(n[0]-r)<=2 && Math.abs(n[1]-c)<=2)
+  );
+  const lines = [];
+  nearby.forEach(i => lines.push(
+    `<div class="log-line" style="color:var(--amber)">⚠ ${(i.type||'').replace(/_/g,' ')} @ [${i.node.join(',')}]</div>`
+  ));
+  if (hasGW) lines.push(`<div class="log-line" style="color:var(--green)">▶ Green Wave nearby</div>`);
+  if (!lines.length) lines.push(`<div class="log-line">No activity within 2 nodes</div>`);
+  document.getElementById('nearby-log').innerHTML = lines.join('');
+}
+
+// ────────────────────────────────────────────────────────────────────
+// CHHAYA AI-2 STATE
+// ────────────────────────────────────────────────────────────────────
+let chhayaActive   = false;
+let lastDanger     = 0;
+let telemetryTimer = null;
+
+// Listen for Chhaya state changes from the dashboard window
+try {
+  const ch = new BroadcastChannel('omni_chhaya');
+  ch.onmessage = e => {
+    if (e.data.type === 'CHHAYA_STATE') {
+      chhayaActive = e.data.active;
+      if (!chhayaActive) resetDangerPanel();
+    }
+    if (e.data.type === 'DANGER_UPDATE') updateDangerPanel(e.data);
+  };
+} catch(e) {}
+
+// ── AUTO-ACTIVATE Chhaya when citizen is present ──────────────────
+// Citizen Walker always runs telemetry if a citizen is logged in.
+// Dashboard can still override via BroadcastChannel, but we don't
+// wait for it — the walker is independently functional.
+function ensureChhayaActive() {
+  if (citizen && !chhayaActive) {
+    chhayaActive = true;
+    // Notify dashboard if it happens to be open
+    try {
+      const bc = new BroadcastChannel('omni_chhaya');
+      bc.postMessage({ type: 'CHHAYA_STATE', active: true });
+    } catch(e) {}
+  }
+}
+
+function resetDangerPanel() {
+  const panel = document.getElementById('danger-panel');
+  const bar   = document.getElementById('danger-bar');
+  const num   = document.getElementById('danger-num');
+  if (panel) { panel.className = 'danger-panel'; }
+  if (bar)   { bar.style.width = '0%'; bar.style.background = 'var(--green)'; }
+  if (num)   { num.textContent = '0'; num.style.color = 'var(--green)'; }
+  _setEl('danger-msg',     'Awaiting escort activation…');
+  _setEl('danger-action',  '—');
+  _setEl('danger-stalker', '—');
+}
+
+function updateDangerPanel(d) {
+  const dl    = d.danger_level || 0;
+  const panel = document.getElementById('danger-panel');
+  const bar   = document.getElementById('danger-bar');
+  const num   = document.getElementById('danger-num');
+  const col   = dl > 60 ? 'var(--red)' : dl >= 30 ? 'var(--amber)' : 'var(--green)';
+
+  if (panel) {
+    panel.className = dl > 60 ? 'danger-panel alert' : dl >= 30 ? 'danger-panel warn' : 'danger-panel';
+  }
+  if (bar) { bar.style.width = dl + '%'; bar.style.background = col; }
+  if (num) { num.textContent = dl; num.style.color = col; }
+
+  _setEl('danger-msg',     d.alert_message || '✓ Route clear.');
+  document.getElementById('danger-msg').style.color =
+    dl > 60 ? 'var(--red)' : dl >= 30 ? 'var(--amber)' : 'var(--txt2)';
+
+  const action = (d.recommended_action || 'continue').replace(/_/g,' ').toUpperCase();
+  const actionEl = document.getElementById('danger-action');
+  if (actionEl) { actionEl.textContent = action; actionEl.style.color = col; }
+
+  _setEl('danger-stalker', d.stalker_id || 'NONE');
+  const stalkerEl = document.getElementById('danger-stalker');
+  if (stalkerEl) stalkerEl.style.color = d.stalker_id ? 'var(--red)' : 'var(--txt3)';
+
+  lastDanger = dl;
+}
+
+function _setEl(id, val) {
+  const e = document.getElementById(id);
+  if (e) e.textContent = val;
+}
+
+// ── Arrival notification ──────────────────────────────────────────────
+let _toastTimer = null;
+function showArrivalToast(vtype) {
+  const isPolice = vtype === 'POLICE';
+  const toast = document.getElementById('arrival-toast');
+  if (!toast) return;
+
+  document.getElementById('toast-icon').textContent  = isPolice ? '🚔' : '🚑';
+  document.getElementById('toast-title').textContent = isPolice ? 'POLICE ARRIVED' : 'AMBULANCE ARRIVED';
+  document.getElementById('toast-msg').textContent   = isPolice
+    ? 'Officers on-site. Identify yourself clearly and stay calm.'
+    : 'Paramedics on-site. Help is here — you are safe.';
+
+  toast.className = 'arrival-toast ' + (isPolice ? 'police' : 'amb');
+
+  // Try browser notification too if permission granted
+  try {
+    if (Notification.permission === 'granted') {
+      new Notification('OmniCity — ' + (isPolice ? 'Police Arrived 🚔' : 'Ambulance Arrived 🚑'), {
+        body: isPolice
+          ? 'Officers are on-site at your location.'
+          : 'Paramedics are on-site. You are safe.',
+        icon: '',
+        tag:  'omni-arrival-' + vtype,
+      });
+    }
+  } catch(e) {}
+
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  // Clear any existing timer and auto-dismiss after 7 s
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 7000);
+}
+
+async function sendTelemetry() {
+  if (!chhayaActive || !citizen) return;
+  try {
+    // Build synthetic nearby tracks from nearby incidents
+    const tracks = [];
+    const [r, c] = pos;
+    incidents.filter(i =>
+      i.node && Math.abs(i.node[0]-r)<=3 && Math.abs(i.node[1]-c)<=3
+    ).slice(0,4).forEach((inc,idx) => {
+      const dist = Math.sqrt(
+        Math.pow((inc.node[0]-r)*40,2) + Math.pow((inc.node[1]-c)*40,2)
+      );
+      const angle = Math.random() * 180;
+      tracks.push({ id: `INC-${idx}`, distance: Math.round(dist), angle: Math.round(angle) });
+    });
+
+    const density = densityAtNode(r, c);
+    const fd = new FormData();
+    fd.append('citizen_uid',   citizen.uid || citizen.citizen_uid || 'UNKNOWN');
+    fd.append('node_row',      r);
+    fd.append('node_col',      c);
+    fd.append('risk_zone',     Math.min(0.95, density + 0.1).toFixed(2));
+    fd.append('sim_time',      new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
+    fd.append('path_progress', '0.5');
+    fd.append('nearby_ids',    JSON.stringify(tracks));
+
+    const resp = await fetch(`${API}/chhaya/telemetry`, { method: 'POST', body: fd });
+    if (!resp.ok) return;
+    const d = await resp.json();
+    updateDangerPanel(d);
+
+    // Broadcast to dashboard — walker is source of truth
+    try {
+      const bc = new BroadcastChannel('omni_chhaya');
+      bc.postMessage({ type: 'DANGER_UPDATE', node: [r, c], ...d });
+      bc.close();
+    } catch(e) {}
+
+  } catch(e) { console.warn('Telemetry error:', e); }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// SOS
+// ────────────────────────────────────────────────────────────────────
+async function triggerSOS() {
+  if (!citizen) { alert('No citizen logged in.'); return; }
+
+  // Open modal immediately
+  document.getElementById('sos-modal').classList.add('open');
+  document.getElementById('sos-loading').style.display = 'block';
+  document.getElementById('sos-content').style.display = 'none';
+  document.getElementById('sos-btn').disabled = true;
+
+  // Build situation description from current context
+  const here = incidents.filter(i =>
+    i.node && i.node[0]===pos[0] && i.node[1]===pos[1]
+  );
+  let situation = 'General emergency — citizen pressed SOS';
+  if (lastDanger > 60) situation = 'Being followed or stalked — high danger level detected';
+  else if (here.length > 0) situation = here.map(i=>i.type).join(', ') + ' at current location';
+
+  const fd = new FormData();
+  fd.append('citizen_uid',  citizen.uid || citizen.citizen_uid || 'UNKNOWN');
+  fd.append('node_row',     pos[0]);
+  fd.append('node_col',     pos[1]);
+  fd.append('situation',    situation);
+  fd.append('danger_level', lastDanger);
+
+  try {
+    const resp = await fetch(`${API}/chhaya/sos`, { method: 'POST', body: fd });
+    const d    = await resp.json();
+
+    // Hide spinner, show content
+    document.getElementById('sos-loading').style.display = 'none';
+    document.getElementById('sos-content').style.display = 'block';
+
+    // Ticket + ETA
+    _setEl('sos-ticket', d.ticket_id || '—');
+    _setEl('sos-eta',    d.avg_eta_seconds || '—');
+
+    // Vehicles dispatched
+    const vEl = document.getElementById('sos-vehicles');
+    const dispatched = d.vehicles_dispatched || [];
+    vEl.innerHTML = dispatched.map(v => `
+      <div class="sos-vehicle ${v.type==='POLICE'?'police':'amb'}">
+        <div style="font-size:14px;margin-bottom:3px">${v.type==='POLICE'?'🚔':'🚑'}</div>
+        <div style="font-weight:700">${v.type}</div>
+        <div>From: [${(v.origin_node||[]).join(',')}]</div>
+        <div style="color:var(--amber)">ETA: ~${v.eta_seconds}s</div>
+      </div>
+    `).join('') || '<div style="font-family:var(--mono);font-size:9px;color:var(--red)">Simulation offline — manual dispatch required</div>';
+
+    // ── Spawn vehicles on the map canvas ──────────────────────────────
+    const spawnTime = Date.now();
+    dispatched.forEach(v => {
+      sosVehicles.push({
+        type:        v.type,
+        origin_node: v.origin_node || [pos[0]+3, pos[1]+3],
+        eta_seconds: v.eta_seconds || 20,
+        route_path:  v.route_path  || [],   // full green wave corridor path
+        startAt:     spawnTime,
+        expireAt:    spawnTime + (v.eta_seconds || 20) * 1000 + 5000,
+      });
+    });
+
+    // ── Immediately re-poll to pick up new green waves from the sim ───
+    await pollSim();
+
+    // Guidance steps
+    const guidance = d.guidance || [];
+    document.getElementById('sos-steps').innerHTML = guidance.map((s,i) =>
+      `<div class="guidance-step">
+        <span class="step-num">${i+1}.</span>
+        <span>${s}</span>
+      </div>`
+    ).join('');
+
+    // Do not + reassurance + assessment
+    const full = d.guidance_full || {};
+    _setEl('sos-donot',    '⛔ DO NOT: ' + (full.do_not || ''));
+    _setEl('sos-reassure', '✓ ' + (full.reassurance || 'Help is on the way.'));
+    _setEl('sos-assess',   full.severity_assessment || '');
+    // Canvas already refreshed by pollSim() above — vehicles now visible on map
+
+  } catch(e) {
+    document.getElementById('sos-loading').innerHTML =
+      `<div style="color:var(--red);font-family:var(--mono);font-size:10px">Error: ${e.message}<br><br>
+      <div style="font-size:9px;color:var(--txt2)">Please call 112 immediately.</div></div>`;
+  }
+}
+
+function closeSOS() {
+  document.getElementById('sos-modal').classList.remove('open');
+  document.getElementById('sos-btn').disabled = false;
+}
+
+// Close modal on backdrop click
+document.addEventListener('click', e => {
+  const modal = document.getElementById('sos-modal');
+  if (e.target === modal) closeSOS();
+});
+
+// ────────────────────────────────────────────────────────────────────
+// API POLLING
+// ────────────────────────────────────────────────────────────────────
+async function pollSim() {
+  try {
+    const [mapR, sentR] = await Promise.all([
+      fetch(`${API}/api/v1/live-map`),
+      fetch(`${API}/api/v1/sentinel`),
+    ]);
+    if (!mapR.ok) throw new Error(`Map ${mapR.status}`);
+    const mapData  = await mapR.json();
+    const sentData = sentR.ok ? await sentR.json() : {};
+
+    edgeDensities = mapData.edge_densities     || {};
+    signalStates  = mapData.signal_states      || {};
+    greenWaves    = mapData.active_green_waves || [];
+    incidents     = sentData.active_incidents  || [];
+
+    const statusEl = document.getElementById('top-status');
+    statusEl.textContent = mapData._offline ? '● FALLBACK' : '● LIVE';
+    statusEl.style.color = mapData._offline ? 'var(--amber)' : 'var(--green)';
+  } catch(e) {
+    const statusEl = document.getElementById('top-status');
+    statusEl.textContent = '● OFFLINE';
+    statusEl.style.color = 'var(--red)';
+  }
+  draw();
+  updateSidePanel();
+  // Always run telemetry on every poll if citizen is present (not just on move)
+  ensureChhayaActive();
+  if (chhayaActive && citizen) sendTelemetry();
+}
+
+// ────────────────────────────────────────────────────────────────────
+// BOOT — everything inside DOMContentLoaded so canvas is sized
+// ────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Load citizen from localStorage
+  try {
+    const raw = localStorage.getItem('omni_walker_citizen');
+    if (raw) {
+      const data = JSON.parse(raw);
+      citizen = data;
+      API     = data.api || 'http://localhost:8000';
+      if (Array.isArray(data.node) && data.node.length === 2) pos = [...data.node];
+      document.getElementById('top-citizen').textContent =
+        (data.name || data.uid || '—').substring(0, 20);
+    }
+  } catch(e) {}
+
+  // Size canvas AFTER layout, then draw
+  sizeCanvas();
+  document.getElementById('top-node').textContent = `NODE [${pos[0]}, ${pos[1]}]`;
+
+  // Broadcast starting position immediately
+  try {
+    localStorage.setItem('omni_walker_node', JSON.stringify(pos));
+    if (channel) channel.postMessage({ type: 'MOVE', node: pos });
+  } catch(e) {}
+
+  // Request notification permission for arrival alerts
+  try { Notification.requestPermission(); } catch(e) {}
+
+  // Start polling — first call draws immediately + triggers telemetry
+  pollSim();
+  setInterval(pollSim, 2000);
+  // Remove separate telemetry interval — pollSim now fires it every cycle
+});
+
+window.addEventListener('resize', () => { sizeCanvas(); draw(); });
+
+// ────────────────────────────────────────────────────────────────────
+// ANIMATION LOOP — only runs while SOS vehicles are active
+// ────────────────────────────────────────────────────────────────────
+let _animFrame = null;
+function startAnimLoop() {
+  if (_animFrame) return;  // already running
+  function loop() {
+    if (sosVehicles.length === 0) {
+      _animFrame = null;
+      return;
+    }
+    draw();
+    _animFrame = requestAnimationFrame(loop);
+  }
+  _animFrame = requestAnimationFrame(loop);
+}
+
+// Patch sosVehicles push to auto-start the animation loop
+const _origSosVehicles = sosVehicles;
+Object.defineProperty(window, '_sosVehiclesWatcher', { get() { return sosVehicles; } });
+// Use a proxy-like approach: override the push method
+const _realPush = Array.prototype.push;
+sosVehicles.push = function(...args) {
+  const result = _realPush.apply(this, args);
+  startAnimLoop();
+  return result;
+};
+
+
+</script>
+
+<!-- SOS MODAL -->
+<div class="sos-modal" id="sos-modal">
+  <div class="sos-box">
+    <div class="sos-header">
+      <span style="font-size:20px">🚨</span>
+      <div class="sos-header-title">SOS DISPATCHED</div>
+      <button class="sos-close" onclick="closeSOS()">✕ CLOSE</button>
+    </div>
+    <div class="sos-body" id="sos-body">
+      <div class="sos-loading" id="sos-loading">
+        <div class="sos-spinner"></div>
+        DISPATCHING EMERGENCY UNITS…<br>
+        <span style="font-size:9px;color:#1e3a48;margin-top:6px;display:block">AI generating guidance…</span>
+      </div>
+      <div id="sos-content" style="display:none">
+        <!-- Vehicles -->
+        <div style="font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:.15em;color:#4a7080;margin-bottom:8px">UNITS DISPATCHED</div>
+        <div class="sos-vehicles" id="sos-vehicles"></div>
+        <!-- Guidance -->
+        <div class="sos-guidance">
+          <div class="sos-guidance-title">⚡ WHAT TO DO RIGHT NOW</div>
+          <div id="sos-steps"></div>
+          <div class="sos-donot" id="sos-donot"></div>
+          <div class="sos-reassurance" id="sos-reassure"></div>
+        </div>
+        <!-- Situation -->
+        <div style="margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:9px;color:#1e3a48;line-height:1.7" id="sos-assess"></div>
+        <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(255,42,74,.5);text-align:center">
+          Ticket: <span id="sos-ticket">—</span> · ETA: <span id="sos-eta">—</span>s
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ARRIVAL TOAST -->
+<div id="arrival-toast" class="arrival-toast">
+  <div class="toast-icon" id="toast-icon">🚔</div>
+  <div class="toast-body">
+    <div class="toast-title" id="toast-title">UNIT ARRIVED</div>
+    <div class="toast-msg"  id="toast-msg">Help is here. You are safe.</div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OmniCity AI — Judge's Guide</title>
+<style>
+  :root {
+    --bg:      #08111f;
+    --bg2:     #0d1929;
+    --bg3:     #111f33;
+    --cyan:    #00d4ff;
+    --green:   #00ff9d;
+    --red:     #ff4444;
+    --amber:   #f59e0b;
+    --purple:  #cc44ff;
+    --white:   #f0f6ff;
+    --muted:   #94a3b8;
+    --dim:     #3a5068;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.6;
+    padding: 0 0 60px 0;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #020c18 0%, #061422 60%, #0a1f35 100%);
+    border-bottom: 1px solid var(--dim);
+    padding: 52px 40px 44px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(var(--cyan) 1px, transparent 1px);
+    background-size: 38px 38px;
+    opacity: 0.045;
+  }
+  .hero-inner { position: relative; max-width: 900px; margin: 0 auto; }
+  .badge {
+    display: inline-block;
+    background: rgba(0,212,255,0.12);
+    border: 1px solid rgba(0,212,255,0.35);
+    color: var(--cyan);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-size: clamp(32px, 5vw, 54px);
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    color: var(--white);
+    margin-bottom: 10px;
+  }
+  .hero h1 span { color: var(--cyan); }
+  .hero .sub {
+    font-size: 17px;
+    color: var(--muted);
+    max-width: 600px;
+    margin-bottom: 30px;
+  }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .pill {
+    background: var(--bg3);
+    border: 1px solid var(--dim);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: var(--white);
+  }
+  .pill strong { color: var(--cyan); display: block; font-size: 18px; }
+
+  /* ── SECTIONS ── */
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+  section { margin-top: 44px; }
+  h2 {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  /* ── STEP CARDS ── */
+  .steps { display: flex; flex-direction: column; gap: 14px; }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    background: var(--bg2);
+    border: 1px solid var(--dim);
+    border-radius: 10px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .step::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--cyan);
+  }
+  .step-num {
+    min-width: 36px; height: 36px;
+    background: rgba(0,212,255,0.15);
+    border: 1px solid var(--cyan);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; color: var(--cyan);
+    margin-top: 2px;
+  }
+  .step-body h3 { font-size: 15px; color: var(--white); margin-bottom: 5px; }
+  .step-body p  { font-size: 13px; color: var(--muted); }
+  .step-body code {
+    display: inline-block;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--dim);
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    color: var(--green);
+    margin-top: 4px;
+  }
+  .step-body .cmd-block {
+    background: #010c18;
+    border: 1px solid var(--dim);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12.5px;
+    color: var(--green);
+    white-space: pre-wrap;
+    line-height: 1.8;
+  }
+
+  /* ── ALERT BOX ── */
+  .alert {
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-top: 14px;
+  }
+  .alert-warn  { background: rgba(245,158,11,0.1);  border: 1px solid rgba(245,158,11,0.35); color: #fcd34d; }
+  .alert-info  { background: rgba(0,212,255,0.08);  border: 1px solid rgba(0,212,255,0.3);   color: var(--cyan); }
+  .alert-good  { background: rgba(0,255,157,0.08);  border: 1px solid rgba(0,255,157,0.3);   color: var(--green); }
+  .alert-icon  { font-size: 18px; line-height: 1.3; }
+
+  /* ── PORTAL CARDS ── */
+  .portals { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 600px) { .portals { grid-template-columns: 1fr; } }
+  .portal {
+    background: var(--bg2);
+    border: 1px solid var(--dim);
+    border-radius: 10px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .portal.main { border-color: var(--cyan); }
+  .portal.main::before { background: var(--cyan); }
+  .portal.green::before { background: var(--green); }
+  .portal.red::before   { background: var(--red);   }
+  .portal.amber::before { background: var(--amber);  }
+  .portal::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+  }
+  .portal-icon { font-size: 26px; margin-bottom: 8px; }
+  .portal h3   { font-size: 14px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+  .portal .url {
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--cyan);
+    background: rgba(0,212,255,0.08);
+    border-radius: 4px;
+    padding: 3px 7px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .portal.green .url { color: var(--green); background: rgba(0,255,157,0.08); }
+  .portal.red   .url { color: var(--red);   background: rgba(255,68,68,0.08); }
+  .portal.amber .url { color: var(--amber); background: rgba(245,158,11,0.08); }
+  .portal p { font-size: 12.5px; color: var(--muted); }
+  .start-here {
+    background: var(--cyan);
+    color: #000;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* ── MODELS TABLE ── */
+  .models { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 600px) { .models { grid-template-columns: 1fr; } }
+  .model-row {
+    background: var(--bg2);
+    border: 1px solid var(--dim);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .model-tag {
+    min-width: 46px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 3px 6px;
+    border-radius: 5px;
+  }
+  .tag-cyan   { background: rgba(0,212,255,0.18); color: var(--cyan);   border: 1px solid rgba(0,212,255,0.4); }
+  .tag-green  { background: rgba(0,255,157,0.14); color: var(--green);  border: 1px solid rgba(0,255,157,0.4); }
+  .tag-amber  { background: rgba(245,158,11,0.14);color: var(--amber);  border: 1px solid rgba(245,158,11,0.4); }
+  .tag-purple { background: rgba(204,68,255,0.14);color: var(--purple); border: 1px solid rgba(204,68,255,0.4); }
+  .model-info h4 { font-size: 12.5px; color: var(--white); }
+  .model-info p  { font-size: 11px; color: var(--muted); }
+
+  /* ── PACKAGES ── */
+  .pkg-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .pkg {
+    background: var(--bg3);
+    border: 1px solid var(--dim);
+    border-radius: 5px;
+    padding: 4px 11px;
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--green);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    margin-top: 60px;
+    padding: 30px 20px;
+    border-top: 1px solid var(--dim);
+    color: var(--muted);
+    font-size: 12px;
+  }
+  footer span { color: var(--cyan); }
+
+  hr { border: none; border-top: 1px solid var(--dim); margin: 40px 0; }
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="badge">⬡ Smart City Platform · v4.2.0</div>
+    <h1><span>OmniCity</span> AI</h1>
+    <p class="sub">Autonomous Urban Operating System — real-time digital twin, 8 AI/CV models, citizen identity, women's safety, and emergency dispatch in one platform.</p>
+    <div class="pill-row">
+      <div class="pill"><strong>12</strong>AI / CV Models</div>
+      <div class="pill"><strong>500</strong>Simulated Citizens</div>
+      <div class="pill"><strong>25 tps</strong>Realtime Engine</div>
+      <div class="pill"><strong>4</strong>Web Interfaces</div>
+      <div class="pill"><strong>5 K+</strong>Lines of Code</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONTENT ════════════════════════════════════════════════════════════════ -->
+<div class="wrap">
+
+  <!-- QUICK START -->
+  <section>
+    <h2>⚡ Quick Start — How to Run</h2>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Make sure Python 3.10+ is installed</h3>
+          <p>Download from <strong>https://python.org</strong> if you don't have it. During install on Windows, check <em>"Add Python to PATH"</em>.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Run the starter file — one double-click</h3>
+          <p><strong>Windows:</strong> Double-click <code>START_OMNICITYAI.bat</code> in this folder.<br/>
+          <strong>Mac / Linux:</strong> Open Terminal in this folder and run:</p>
+          <div class="cmd-block">chmod +x START_OMNICITYAI.sh
+./START_OMNICITYAI.sh</div>
+          <p style="margin-top:10px; color: var(--amber);">⏳ First run installs packages and downloads AI model weights (~2–4 GB). This can take 5–15 minutes depending on internet speed. Subsequent launches are instant.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Wait for the server ready message</h3>
+          <p>You'll see this line in the terminal when the backend is live:</p>
+          <div class="cmd-block">INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Open your browser and navigate to the portal</h3>
+          <p>Start at the Citizen Portal — it's the entry point for the whole system.</p>
+          <div class="cmd-block">http://localhost:8000/index.html</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="alert alert-warn" style="margin-top:16px;">
+      <span class="alert-icon">⚠</span>
+      <div>
+        <strong>Do NOT open the HTML files directly by double-clicking them.</strong>
+        They must be served through the backend at <code style="color:var(--amber)">localhost:8000</code> — otherwise all API calls will fail and the site will show blank data.
+      </div>
+    </div>
+
+    <div class="alert alert-good">
+      <span class="alert-icon">✅</span>
+      <div>The <code>omnicityai.db</code> database already contains pre-registered citizens and demo reports — you don't need to register from scratch to see the system working.</div>
+    </div>
+  </section>
+
+
+  <hr/>
+
+  <!-- DEMO LOGIN -->
+  <section>
+    <h2>🪪 Pre-Built Demo Citizen — Skip Registration</h2>
+    <p style="color:var(--muted); font-size:13.5px; margin-bottom:18px;">
+      A citizen profile is already registered in the database. Use these credentials to log in instantly on <strong style="color:var(--white)">index.html</strong> without going through the Aadhaar registration flow.
+    </p>
+
+    <div style="background: linear-gradient(135deg, #041a2e 0%, #071f3a 100%); border: 1px solid var(--cyan); border-radius: 12px; padding: 28px 32px; position: relative; overflow: hidden; max-width: 580px;">
+
+      <!-- glow top-right -->
+      <div style="position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%; background: radial-gradient(circle, rgba(0,212,255,0.18) 0%, transparent 70%);"></div>
+
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:22px;">
+        <div style="width:48px; height:48px; border-radius:50%; background:rgba(0,212,255,0.15); border:2px solid var(--cyan); display:flex; align-items:center; justify-content:center; font-size:22px;">👤</div>
+        <div>
+          <div style="font-size:11px; color:var(--cyan); font-weight:700; letter-spacing:3px; text-transform:uppercase;">Pre-Registered Citizen</div>
+          <div style="font-size:18px; font-weight:800; color:var(--white); margin-top:2px;">AER</div>
+        </div>
+        <div style="margin-left:auto; background:rgba(0,255,157,0.12); border:1px solid rgba(0,255,157,0.4); border-radius:6px; padding:4px 12px; font-size:11px; color:var(--green); font-weight:700; letter-spacing:2px;">VERIFIED ✓</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:10px;">
+
+        <div style="background:rgba(0,0,0,0.3); border:1px solid var(--dim); border-radius:8px; padding:14px 16px;">
+          <div style="font-size:10px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:6px;">Full Name</div>
+          <div style="font-size:20px; font-weight:900; color:var(--white); letter-spacing:1px;">AER</div>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.3); border:1px solid var(--cyan); border-radius:8px; padding:14px 16px; position:relative;">
+          <div style="font-size:10px; color:var(--cyan); letter-spacing:2px; text-transform:uppercase; margin-bottom:6px;">Aadhaar Last 4 Digits</div>
+          <div style="font-size:28px; font-weight:900; color:var(--cyan); font-family:'Consolas',monospace; letter-spacing:4px;">9012</div>
+          <div style="position:absolute; top:10px; right:12px; font-size:16px; opacity:0.4;">🔑</div>
+        </div>
+
+      </div>
+
+      <div style="background:rgba(0,212,255,0.07); border:1px solid rgba(0,212,255,0.2); border-radius:8px; padding:12px 16px; font-size:12.5px; color:var(--muted); line-height:1.6;">
+        <span style="color:var(--cyan); font-weight:700;">How to use:</span>
+        Open <code style="color:var(--green); background:rgba(0,0,0,0.4); padding:1px 6px; border-radius:4px;">localhost:8000/index.html</code>
+        → click <strong style="color:var(--white)">Sign In</strong>
+        → enter name <strong style="color:var(--white)">AER</strong> and last 4 digits <strong style="color:var(--white)">9012</strong>
+        → full dashboard access unlocked.
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- INTERFACES -->
+  <section>
+    <h2>🖥 The 4 Web Interfaces</h2>
+    <div class="portals">
+
+      <div class="portal main">
+        <div class="portal-icon">🏛</div>
+        <h3>Citizen Trust Gateway <span class="start-here">Start Here</span></h3>
+        <div class="url">localhost:8000/index.html</div>
+        <p>Public-facing portal. Register with Aadhaar OCR, log in, see your Trust Score, Karma, and activate the Chhaya escort system. This is the citizen's face of OmniCity.</p>
+      </div>
+
+      <div class="portal green">
+        <div class="portal-icon">📡</div>
+        <h3>Operator Dashboard</h3>
+        <div class="url">localhost:8000/dashboard.html</div>
+        <p>Full city control room. 7 tabs: live map of the digital twin, AI Sentinel feed, Green Wave traffic log, Power grid, Public Ledger, Incident Report, and Chhaya escort tracker.</p>
+      </div>
+
+      <div class="portal red">
+        <div class="portal-icon">📷</div>
+        <h3>Live CCTV Monitor</h3>
+        <div class="url">localhost:8000/cctv_monitor.html</div>
+        <p>Multi-feed CCTV control room view. Real-time CV detections, city infrastructure health gauges, active camera count, and live incident log scrolling.</p>
+      </div>
+
+      <div class="portal amber">
+        <div class="portal-icon">🚶</div>
+        <h3>Citizen Walker</h3>
+        <div class="url">localhost:8000/citizen_walker.html</div>
+        <p>Interactive first-person city navigation. Move a citizen through the 20×20 grid node by node, see real-time AI-2 danger status, and trigger emergency SOS with live dispatch response.</p>
+      </div>
+
+    </div>
+
+    <div class="alert alert-info" style="margin-top:16px;">
+      <span class="alert-icon">💡</span>
+      <div>To demo a full flow: open <strong>index.html</strong> → log in → go to <strong>dashboard.html</strong> to see the live city map updating every 2 seconds → open <strong>citizen_walker.html</strong> in another tab to navigate through the city and trigger SOS.</div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- DEMO FLOW -->
+  <section>
+    <h2>🎬 Recommended Demo Flow for Judges</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>index.html → Register a new citizen</h3>
+          <p>Upload any Aadhaar card image — the OCR pipeline (EasyOCR) will extract the name and ID. MTCNN crops the face, FaceNet creates an embedding. Watch the Trust Score assign automatically.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>index.html → Log in and see the Identity Token</h3>
+          <p>Enter Aadhaar last-4 digits + name. Your Trust Score (0–100), Karma points, Penalty Tier (None/Warn/Restrict/Ban), and accessible facilities appear.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>dashboard.html → Watch the live city</h3>
+          <p>Open the <em>City Map</em> tab. The 20×20 digital twin is running live — road colours show traffic density, signals cycle Red→Green, active incidents appear as overlays, and emergency Green Wave corridors glow when triggered.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>dashboard.html → File a Verified Incident Report</h3>
+          <p>Go to the <em>File Report</em> tab, upload a photo of something relevant (fire, crowd, damage). The CV pipeline will scan it and either VERIFY or REJECT the report, updating Karma live.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h3>citizen_walker.html → Trigger Chhaya SOS</h3>
+          <p>Navigate to any grid node. Press SOS. Watch ML-1 instantly create a Green Wave emergency corridor routing police + ambulance to your exact position. See it reflected on the dashboard map simultaneously.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- AI MODELS -->
+  <section>
+    <h2>🤖 AI / CV Models in This System</h2>
+    <div class="models">
+      <div class="model-row"><span class="model-tag tag-cyan">CV-1</span><div class="model-info"><h4>YOLOv8m</h4><p>Person detection on CCTV frames</p></div></div>
+      <div class="model-row"><span class="model-tag tag-cyan">CV-2</span><div class="model-info"><h4>MTCNN</h4><p>Face extraction & alignment</p></div></div>
+      <div class="model-row"><span class="model-tag tag-cyan">CV-3</span><div class="model-info"><h4>FaceNet VGGFace2</h4><p>Face recognition → citizen DB match</p></div></div>
+      <div class="model-row"><span class="model-tag tag-cyan">CV-4</span><div class="model-info"><h4>YOLOv8n Firearm</h4><p>Weapon & threat detection</p></div></div>
+      <div class="model-row"><span class="model-tag tag-green">CV-5</span><div class="model-info"><h4>YOLOv8m Spatial</h4><p>Traffic accident detection</p></div></div>
+      <div class="model-row"><span class="model-tag tag-green">CV-6</span><div class="model-info"><h4>CLIP (zero-shot)</h4><p>Fire & smoke detection</p></div></div>
+      <div class="model-row"><span class="model-tag tag-green">CV-7</span><div class="model-info"><h4>Density Counter</h4><p>Vehicle count per road segment</p></div></div>
+      <div class="model-row"><span class="model-tag tag-green">CV-8</span><div class="model-info"><h4>ANPR / EasyOCR</h4><p>License plate recognition</p></div></div>
+      <div class="model-row"><span class="model-tag tag-amber">ML-1</span><div class="model-info"><h4>Route Optimizer</h4><p>Green wave + emergency corridor</p></div></div>
+      <div class="model-row"><span class="model-tag tag-amber">ML-2</span><div class="model-info"><h4>RandomForest Classifier</h4><p>Master incident classifier</p></div></div>
+      <div class="model-row"><span class="model-tag tag-purple">AI-1</span><div class="model-info"><h4>Trust Engine</h4><p>Citizen trust score 0–100</p></div></div>
+      <div class="model-row"><span class="model-tag tag-purple">AI-2</span><div class="model-info"><h4>Chhaya Detector</h4><p>Real-time stalking / danger score</p></div></div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- PACKAGES -->
+  <section>
+    <h2>📦 Python Packages Required</h2>
+    <p style="color:var(--muted); font-size:13px; margin-bottom:10px;">The starter script installs all of these automatically. Listed here for reference:</p>
+    <div class="pkg-grid">
+      <span class="pkg">fastapi</span>
+      <span class="pkg">uvicorn</span>
+      <span class="pkg">sqlalchemy</span>
+      <span class="pkg">pillow</span>
+      <span class="pkg">opencv-python</span>
+      <span class="pkg">numpy</span>
+      <span class="pkg">torch</span>
+      <span class="pkg">torchvision</span>
+      <span class="pkg">facenet-pytorch</span>
+      <span class="pkg">ultralytics</span>
+      <span class="pkg">transformers</span>
+      <span class="pkg">scikit-learn</span>
+      <span class="pkg">pandas</span>
+      <span class="pkg">networkx</span>
+      <span class="pkg">easyocr</span>
+      <span class="pkg">httpx</span>
+      <span class="pkg">huggingface_hub</span>
+    </div>
+
+    <div class="alert alert-warn" style="margin-top:16px;">
+      <span class="alert-icon">⚠</span>
+      <div>
+        <strong>First-run model downloads (~2–4 GB total):</strong> YOLOv8 weights, CLIP (openai/clip-vit-base-patch32), FaceNet VGGFace2, and MTCNN are downloaded from HuggingFace/Ultralytics on first use. Ensure internet access for the first launch. Models are cached locally for all future runs.
+      </div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- FILE STRUCTURE -->
+  <section>
+    <h2>📁 File Structure</h2>
+    <div class="step" style="background: #010c18; border-color: var(--dim);">
+      <div class="step-body" style="width:100%">
+        <div class="cmd-block" style="color: var(--muted);">omni/
+├── backend.py            ← Main server (FastAPI) — run this
+├── omnicityai.py         ← Digital twin simulation engine
+├── cv_models.py          ← CV-1 through CV-8 pipeline
+├── ai_models.py          ← AI-1 Trust Engine + AI-2 Chhaya
+├── index.html            ← Citizen Portal        (open first)
+├── dashboard.html        ← Operator Dashboard
+├── cctv_monitor.html     ← CCTV Control Room
+├── citizen_walker.html   ← Walker / Debug View
+├── omnicityai.db         ← SQLite database (pre-seeded)
+├── omnicityai_log.jsonl  ← Incident event log
+├── database/             ← Citizen registry + reports
+├── faces/                ← Face embeddings store
+└── uploads/              ← Report photo uploads</div>
+      </div>
+    </div>
+  </section>
+
+  <hr/>
+
+  <!-- TROUBLESHOOTING -->
+  <section>
+    <h2>🔧 Troubleshooting</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">?</div>
+        <div class="step-body">
+          <h3>Site shows no data / "Failed to fetch"</h3>
+          <p>The backend isn't running. Make sure the terminal running <code>START_OMNICITYAI.bat</code> (or <code>.sh</code>) is still open and shows the Uvicorn message. Don't close it while using the site.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">?</div>
+        <div class="step-body">
+          <h3>Port 8000 already in use</h3>
+          <p>Another process is on port 8000. Kill it or change the port in <code>backend.py</code> (last line: <code>port=8000</code>) and update the URL accordingly.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">?</div>
+        <div class="step-body">
+          <h3>pip install fails / permission error</h3>
+          <p>Run the terminal <strong>as Administrator</strong> (Windows) or use <code>sudo</code> (Mac/Linux). Alternatively add <code>--user</code> flag to pip commands.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">?</div>
+        <div class="step-body">
+          <h3>CV model features return simulated data</h3>
+          <p>If heavy models (CLIP, FaceNet) fail to download on first run, the system gracefully falls back to simulation data. The rest of the platform (digital twin, trust engine, Chhaya) remains fully functional.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /wrap -->
+
+<footer>
+  <div style="font-size:22px; margin-bottom:8px;">🏙</div>
+  <strong style="font-size:16px; color:var(--cyan);">OmniCity AI</strong><br/>
+  Autonomous Urban Operating System &nbsp;·&nbsp; v4.2.0<br/>
+  <span>Digital Twin · CV Vision · Citizen Trust · Women's Safety · Emergency Dispatch</span>
+</footer>
+
+</body>
+</html>

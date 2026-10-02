@@ -1,0 +1,2969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>OmniCity AI — Citizen Awareness Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════════════════
+   OmniCity AI — CITIZEN AWARENESS TERMINAL
+   Pure read-only streaming terminal. Dark. Dense. Alive.
+═══════════════════════════════════════════════════════ */
+:root {
+  --bg:      #07090d;
+  --bg1:     #0a0e14;
+  --bg2:     #0e1420;
+  --bg3:     #121a26;
+  --bg4:     #182030;
+  --line:    rgba(255,255,255,0.05);
+  --line2:   rgba(255,255,255,0.10);
+  --line3:   rgba(255,255,255,0.18);
+
+  --cyan:    #00e5ff;
+  --cyanD:   rgba(0,229,255,0.07);
+  --cyanM:   rgba(0,229,255,0.16);
+  --cyanB:   rgba(0,229,255,0.30);
+
+  --green:   #00ff88;
+  --greenD:  rgba(0,255,136,0.07);
+  --greenM:  rgba(0,255,136,0.16);
+
+  --red:     #ff3b5c;
+  --redD:    rgba(255,59,92,0.07);
+  --redM:    rgba(255,59,92,0.16);
+
+  --amber:   #ffb800;
+  --amberD:  rgba(255,184,0,0.07);
+  --amberM:  rgba(255,184,0,0.16);
+
+  --purple:  #b44dff;
+  --purpleD: rgba(180,77,255,0.07);
+
+  --txt:     #d0dce8;
+  --txt2:    #5a7a90;
+  --txt3:    #2d404f;
+
+  --mono:    'Space Mono', monospace;
+  --cond:    'Barlow Condensed', sans-serif;
+  --body:    'Barlow', sans-serif;
+  --r:       3px;
+
+  /* Road colours */
+  --road-clear:  #00ff88;
+  --road-mod:    #ffb800;
+  --road-jam:    #ff3b5c;
+  --road-off:    #1a2535;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { font-size:13px; }
+body {
+  font-family: var(--body);
+  background: var(--bg);
+  color: var(--txt);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* scanline overlay */
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px);
+  pointer-events:none;
+  z-index:9999;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  display:flex; align-items:center; gap:0;
+  height:48px; flex-shrink:0;
+  background:var(--bg1);
+  border-bottom:1px solid var(--line2);
+  padding:0 16px 0 0;
+}
+
+.brand {
+  display:flex; align-items:center; gap:10px;
+  padding:0 18px; height:100%;
+  border-right:1px solid var(--line2);
+  flex-shrink:0;
+}
+.brand-logo {
+  width:28px; height:28px;
+}
+.brand-name {
+  font-family:var(--cond);
+  font-size:16px; font-weight:900;
+  letter-spacing:.1em; text-transform:uppercase;
+  color:var(--txt); line-height:1;
+}
+.brand-name em { color:var(--cyan); font-style:normal; }
+
+.sys-tickers {
+  display:flex; align-items:center; gap:0;
+  flex:1; overflow:hidden;
+  padding:0 12px;
+}
+.ticker {
+  display:flex; align-items:center; gap:7px;
+  padding:0 14px; height:100%;
+  border-right:1px solid var(--line);
+  white-space:nowrap;
+  font-family:var(--mono);
+  font-size:10px; color:var(--txt2);
+}
+.ticker-dot {
+  width:5px; height:5px; border-radius:50%; flex-shrink:0;
+}
+.dot-g { background:var(--green); box-shadow:0 0 5px var(--green); animation:pulse 2s infinite; }
+.dot-r { background:var(--red);   box-shadow:0 0 5px var(--red);   animation:pulse 1s infinite; }
+.dot-a { background:var(--amber); box-shadow:0 0 5px var(--amber); }
+.dot-off{ background:var(--txt3); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+.topbar-right {
+  display:flex; align-items:center; gap:12px; flex-shrink:0; margin-left:auto;
+}
+.clock { font-family:var(--mono); font-size:12px; color:var(--cyan); letter-spacing:.08em; }
+.citizen-chip {
+  display:flex; align-items:center; gap:7px;
+  padding:5px 10px 5px 6px;
+  background:var(--bg3); border:1px solid var(--line2); border-radius:var(--r);
+  cursor:pointer; transition:border-color .15s;
+}
+.citizen-chip:hover { border-color:var(--cyanB); }
+.avatar {
+  width:24px; height:24px; border-radius:50%;
+  background:var(--cyanD); border:1px solid var(--cyanB);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; flex-shrink:0;
+}
+.cname { font-family:var(--cond); font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--txt); }
+.cuid  { font-family:var(--mono); font-size:9px; color:var(--cyan); margin-top:1px; }
+.exit-btn {
+  padding:5px 11px;
+  background:var(--redD); border:1px solid rgba(255,59,92,.2); border-radius:var(--r);
+  color:var(--red); font-family:var(--cond); font-size:11px; font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:background .15s;
+}
+.exit-btn:hover { background:var(--redM); }
+
+/* ── BODY LAYOUT ── */
+.body-layout {
+  display:grid;
+  grid-template-columns: 52px 1fr 320px;
+  flex:1; overflow:hidden;
+}
+
+/* ── ICON SIDEBAR ── */
+.icon-bar {
+  background:var(--bg1);
+  border-right:1px solid var(--line2);
+  display:flex; flex-direction:column; align-items:center;
+  padding:10px 0; gap:4px;
+}
+.ibar-btn {
+  width:36px; height:36px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:var(--r); cursor:pointer;
+  font-size:16px;
+  transition:background .12s;
+  position:relative;
+}
+.ibar-btn:hover { background:var(--bg3); }
+.ibar-btn.active { background:var(--bg3); }
+.ibar-btn.active::before {
+  content:''; position:absolute; left:0; top:25%; bottom:25%;
+  width:2px; border-radius:0 2px 2px 0;
+  background:var(--cyan);
+}
+.ibar-badge {
+  position:absolute; top:2px; right:2px;
+  min-width:14px; height:14px;
+  background:var(--red); color:#fff;
+  font-family:var(--mono); font-size:8px; font-weight:700;
+  border-radius:7px; padding:0 3px;
+  display:flex; align-items:center; justify-content:center;
+}
+.ibar-sep { height:1px; width:28px; background:var(--line); margin:6px 0; }
+
+/* ── MAP CANVAS ── */
+.map-section {
+  position:relative;
+  background:var(--bg);
+  overflow:hidden;
+  display:flex; flex-direction:column;
+}
+
+.map-header {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 14px;
+  background:var(--bg1);
+  border-bottom:1px solid var(--line);
+  flex-shrink:0;
+  z-index:2;
+}
+.map-title {
+  font-family:var(--cond); font-size:13px; font-weight:800;
+  text-transform:uppercase; letter-spacing:.08em; color:var(--txt);
+}
+.map-controls {
+  display:flex; align-items:center; gap:6px; margin-left:auto;
+}
+.map-ctrl-btn {
+  padding:4px 9px;
+  background:var(--bg3); border:1px solid var(--line);
+  border-radius:var(--r);
+  font-family:var(--mono); font-size:9px; color:var(--txt2);
+  cursor:pointer; transition:all .12s; text-transform:uppercase; letter-spacing:.06em;
+}
+.map-ctrl-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+.map-ctrl-btn.active { background:var(--cyanD); border-color:var(--cyanB); color:var(--cyan); }
+
+.map-body {
+  flex:1; position:relative; overflow:hidden;
+}
+
+#city-map {
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  display:block;
+  background:transparent;
+}
+
+/* Map legend */
+.map-legend {
+  position:absolute; bottom:12px; left:12px;
+  background:rgba(7,9,13,.85);
+  border:1px solid var(--line2);
+  border-radius:var(--r);
+  padding:8px 12px;
+  display:flex; flex-direction:column; gap:5px;
+  backdrop-filter:blur(4px);
+  z-index:10;
+}
+.legend-item {
+  display:flex; align-items:center; gap:7px;
+  font-family:var(--mono); font-size:9px; color:var(--txt2);
+}
+.legend-line {
+  width:20px; height:2px; border-radius:1px; flex-shrink:0;
+}
+
+/* Map overlay panel for incidents */
+.map-overlay {
+  position:absolute; top:10px; left:10px;
+  width:220px; max-height:180px;
+  overflow-y:auto;
+  background:rgba(7,9,13,.82);
+  border:1px solid var(--line2); border-radius:var(--r);
+  padding:8px;
+  z-index:10;
+  display:none;
+  backdrop-filter:blur(4px);
+}
+.map-overlay.show { display:block; }
+.overlay-title {
+  font-family:var(--cond); font-size:11px; font-weight:800;
+  text-transform:uppercase; letter-spacing:.08em;
+  color:var(--red); margin-bottom:6px;
+}
+.ov-inc {
+  display:flex; gap:6px; padding:5px 0;
+  border-bottom:1px solid var(--line);
+  font-size:10px;
+}
+.ov-inc:last-child { border-bottom:none; }
+.ov-inc-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:2px; }
+.ov-inc-body { color:var(--txt2); line-height:1.4; }
+.ov-inc-body strong { color:var(--txt); display:block; }
+
+/* Sim time badge */
+.sim-time-badge {
+  position:absolute; bottom:12px; right:12px;
+  background:rgba(7,9,13,.85);
+  border:1px solid var(--line2); border-radius:var(--r);
+  padding:6px 12px;
+  font-family:var(--mono); font-size:11px; color:var(--cyan);
+  z-index:10;
+  backdrop-filter:blur(4px);
+}
+
+/* ── RIGHT PANEL ── */
+.right-panel {
+  background:var(--bg1);
+  border-left:1px solid var(--line2);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+
+.rpanel-tabs {
+  display:flex;
+  border-bottom:1px solid var(--line2);
+  flex-shrink:0;
+}
+.rpanel-tab {
+  flex:1; padding:9px 4px;
+  font-family:var(--cond); font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.06em;
+  text-align:center; cursor:pointer; color:var(--txt3);
+  border-bottom:2px solid transparent;
+  transition:all .12s;
+}
+.rpanel-tab:hover { color:var(--txt2); }
+.rpanel-tab.active { color:var(--cyan); border-bottom-color:var(--cyan); }
+
+.rpanel-body {
+  flex:1; overflow-y:auto; padding:10px 12px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--bg4); border-radius:2px; }
+
+/* ── SHARED COMPONENTS ── */
+
+.section-title {
+  font-family:var(--mono); font-size:9px; color:var(--txt3);
+  letter-spacing:.14em; text-transform:uppercase;
+  margin:10px 0 6px;
+}
+.section-title:first-child { margin-top:0; }
+
+/* Stat grid */
+.stat-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:6px;
+  margin-bottom:10px;
+}
+.stat-box {
+  background:var(--bg2); border:1px solid var(--line);
+  border-radius:var(--r); padding:9px 10px;
+  position:relative; overflow:hidden;
+}
+.stat-box::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+}
+.sb-c::before { background:var(--cyan); }
+.sb-g::before { background:var(--green); }
+.sb-r::before { background:var(--red); }
+.sb-a::before { background:var(--amber); }
+.sb-p::before { background:var(--purple); }
+
+.stat-lbl { font-family:var(--mono); font-size:8px; color:var(--txt3); letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px; }
+.stat-val { font-family:var(--cond); font-size:22px; font-weight:900; line-height:1; }
+.sv-c { color:var(--cyan); }
+.sv-g { color:var(--green); }
+.sv-r { color:var(--red); }
+.sv-a { color:var(--amber); }
+.sv-p { color:var(--purple); }
+.stat-unit { font-family:var(--mono); font-size:9px; color:var(--txt3); margin-top:2px; }
+
+/* Tag */
+.tag {
+  display:inline-flex; align-items:center; gap:3px;
+  padding:2px 6px; border-radius:2px;
+  font-family:var(--mono); font-size:8px; font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase;
+}
+.t-g  { background:var(--greenD);  color:var(--green);  border:1px solid rgba(0,255,136,.2); }
+.t-r  { background:var(--redD);    color:var(--red);    border:1px solid rgba(255,59,92,.2); }
+.t-a  { background:var(--amberD);  color:var(--amber);  border:1px solid rgba(255,184,0,.2); }
+.t-c  { background:var(--cyanD);   color:var(--cyan);   border:1px solid var(--cyanB); }
+.t-p  { background:var(--purpleD); color:var(--purple); border:1px solid rgba(180,77,255,.2); }
+.t-off{ background:var(--bg4);     color:var(--txt3);   border:1px solid var(--line2); }
+
+/* Feed row */
+.feed-row {
+  display:flex; gap:8px; padding:7px 0;
+  border-bottom:1px solid var(--line);
+}
+.feed-row:last-child { border-bottom:none; }
+.feed-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+.feed-body { flex:1; min-width:0; }
+.feed-title { font-family:var(--cond); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--txt); line-height:1.2; }
+.feed-meta  { font-family:var(--mono); font-size:9px; color:var(--txt3); margin-top:2px; }
+.feed-right { flex-shrink:0; }
+
+/* Progress bar */
+.prog { height:3px; background:var(--bg4); border-radius:2px; overflow:hidden; margin-top:5px; }
+.prog-fill { height:100%; border-radius:2px; transition:width .4s; }
+
+/* Score row */
+.score-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--line); }
+.score-row:last-child { border-bottom:none; }
+.score-dept { font-family:var(--cond); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; width:90px; flex-shrink:0; }
+.score-bar  { flex:1; }
+.score-num  { font-family:var(--mono); font-size:11px; width:30px; text-align:right; flex-shrink:0; }
+
+/* CV log */
+.cv-line {
+  font-family:var(--mono); font-size:10px; line-height:2;
+  color:var(--txt3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.cv-line.verified { color:var(--txt2); }
+.cv-line.critical { color:var(--red); }
+
+/* Chhaya card */
+.chhaya-card {
+  background:var(--bg2); border:1px solid var(--line2);
+  border-radius:var(--r); padding:14px;
+  margin-bottom:8px;
+}
+.chhaya-card.active {
+  background:rgba(0,229,255,.04);
+  border-color:var(--cyanB);
+}
+.chhaya-title {
+  font-family:var(--cond); font-size:16px; font-weight:900;
+  text-transform:uppercase; letter-spacing:.06em; color:var(--txt);
+}
+.chhaya-sub { font-size:11px; color:var(--txt2); line-height:1.6; margin-top:4px; }
+.toggle-row { display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; margin-top:12px; }
+.sw {
+  width:38px; height:20px;
+  background:var(--bg4); border:1px solid var(--line2);
+  border-radius:10px; position:relative; transition:background .2s, border-color .2s;
+  flex-shrink:0;
+}
+.sw::after {
+  content:''; position:absolute; top:3px; left:3px;
+  width:12px; height:12px; border-radius:50%;
+  background:var(--txt3); transition:transform .2s, background .2s;
+}
+.sw.on { background:var(--cyanM); border-color:var(--cyanB); }
+.sw.on::after { transform:translateX(18px); background:var(--cyan); }
+.toggle-lbl { font-family:var(--cond); font-size:13px; font-weight:700; text-transform:uppercase; color:var(--txt); }
+
+/* Ledger rows */
+.led-row {
+  display:flex; align-items:flex-start; gap:8px;
+  padding:8px 10px; background:var(--bg2);
+  border:1px solid var(--line); border-radius:var(--r);
+  margin-bottom:5px; transition:border-color .12s;
+}
+.led-row:hover { border-color:var(--line2); }
+.led-row.breached { border-left:2px solid var(--red); }
+.led-row.open     { border-left:2px solid var(--amber); }
+.led-row.resolved { border-left:2px solid var(--green); opacity:.6; }
+.led-id { font-family:var(--mono); font-size:9px; color:var(--cyan); flex-shrink:0; }
+.led-info { flex:1; min-width:0; }
+.led-cat { font-family:var(--cond); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--txt); }
+.led-meta{ font-family:var(--mono); font-size:9px; color:var(--txt3); margin-top:2px; }
+.led-right { text-align:right; flex-shrink:0; }
+.led-timer { font-family:var(--mono); font-size:10px; color:var(--amber); white-space:nowrap; }
+.led-timer.br { color:var(--red); animation:pulse 1s infinite; }
+
+/* Report form */
+.field { display:flex; flex-direction:column; gap:4px; margin-bottom:9px; }
+.field:last-child { margin-bottom:0; }
+.field-lbl { font-family:var(--mono); font-size:8px; color:var(--txt2); letter-spacing:.1em; text-transform:uppercase; }
+select, textarea, input[type=text] {
+  background:var(--bg3); border:1px solid var(--line2);
+  border-radius:var(--r); padding:7px 9px;
+  color:var(--txt); font-family:var(--body); font-size:12px;
+  outline:none; transition:border-color .15s; width:100%;
+}
+select:focus, textarea:focus, input:focus { border-color:var(--cyan); }
+select option { background:var(--bg2); }
+textarea { resize:vertical; min-height:60px; line-height:1.5; }
+
+.btn-submit {
+  width:100%; padding:9px;
+  background:var(--cyan); color:var(--bg);
+  border:none; border-radius:var(--r);
+  font-family:var(--cond); font-size:13px; font-weight:800;
+  letter-spacing:.1em; text-transform:uppercase;
+  cursor:pointer; transition:background .15s; margin-top:4px;
+}
+.btn-submit:hover:not(:disabled) { background:#33eaff; }
+.btn-submit:disabled { opacity:.4; cursor:not-allowed; }
+
+.notice {
+  display:none; padding:7px 10px; border-radius:var(--r);
+  font-size:11px; line-height:1.5; margin-bottom:8px;
+}
+.notice.show { display:block; }
+.notice.ok   { background:var(--greenD); border:1px solid rgba(0,255,136,.2); color:#6effc4; }
+.notice.err  { background:var(--redD);   border:1px solid rgba(255,59,92,.2); color:#ff9aaa; }
+.notice.info { background:var(--cyanD);  border:1px solid var(--cyanB);       color:#80e8ff; }
+
+/* GW route */
+.gw-card {
+  background:rgba(0,255,136,.04); border:1px solid rgba(0,255,136,.2);
+  border-radius:var(--r); padding:10px 12px; margin-bottom:6px;
+}
+.gw-id { font-family:var(--mono); font-size:10px; color:var(--green); margin-bottom:4px; }
+.gw-meta { font-family:var(--mono); font-size:9px; color:var(--txt3); }
+
+/* Karma ring */
+.karma-wrap { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
+.karma-ring-svg { flex-shrink:0; }
+.karma-details { flex:1; }
+.karma-name { font-family:var(--cond); font-size:18px; font-weight:900; text-transform:uppercase; letter-spacing:.06em; color:var(--txt); }
+.karma-uid  { font-family:var(--mono); font-size:9px; color:var(--cyan); margin-top:2px; }
+.karma-tier {
+  display:inline-block; margin-top:6px; padding:2px 8px;
+  background:var(--greenD); border:1px solid rgba(0,255,136,.25);
+  border-radius:2px; font-family:var(--cond); font-size:10px; font-weight:800;
+  text-transform:uppercase; letter-spacing:.1em; color:var(--green);
+}
+
+/* Empty state */
+.empty { font-family:var(--mono); font-size:10px; color:var(--txt3); text-align:center; padding:16px 0; }
+
+/* Tab panels in rpanel */
+.rp-panel { display:none; }
+.rp-panel.active { display:block; }
+
+/* ── CITIZEN PROFILE CARD ── */
+.prof-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px}
+.prof-face-wrap{position:relative;width:80px;height:80px;flex-shrink:0}
+.prof-face{width:80px;height:80px;border-radius:6px;object-fit:cover;border:2px solid var(--cyan);display:block}
+.prof-face-ph{display:none;width:80px;height:80px;border-radius:6px;background:var(--bg3);border:1px solid var(--line2);align-items:center;justify-content:center;font-size:30px}
+.prof-cv2-tl,.prof-cv2-tr,.prof-cv2-bl,.prof-cv2-br{position:absolute;width:10px;height:10px;border-color:var(--cyan);border-style:solid}
+.prof-cv2-tl{top:-3px;left:-3px;border-width:2px 0 0 2px}
+.prof-cv2-tr{top:-3px;right:-3px;border-width:2px 2px 0 0}
+.prof-cv2-bl{bottom:-3px;left:-3px;border-width:0 0 2px 2px}
+.prof-cv2-br{bottom:-3px;right:-3px;border-width:0 2px 2px 0}
+.prof-cv2-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);border-radius:2px;font-family:var(--mono);font-size:8px;color:var(--green);padding:1px 4px;letter-spacing:.06em}
+.prof-id{flex:1}
+.prof-name{font-family:var(--cond);font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:var(--txt)}
+.prof-uid{font-family:var(--mono);font-size:9px;color:var(--cyan);margin-top:3px;word-break:break-all}
+.prof-node-chip{display:inline-flex;align-items:center;gap:5px;margin-top:6px;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:3px 8px;font-family:var(--mono);font-size:10px;color:var(--cyan)}
+.prof-node-dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);flex-shrink:0;animation:profblink 1.5s infinite}
+@keyframes profblink{0%,100%{opacity:1}50%{opacity:.3}}
+.prof-karma-pill{display:inline-flex;align-items:center;gap:5px;margin-top:6px;background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.2);border-radius:3px;padding:3px 10px;font-family:var(--mono);font-size:10px;color:var(--txt2)}
+.prof-karma-dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;animation:profblink 2s infinite}
+.prof-two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.prof-section{display:flex;flex-direction:column;gap:5px}
+.prof-section-label{font-family:var(--mono);font-size:9px;color:var(--txt3);letter-spacing:.10em;text-transform:uppercase;border-bottom:1px solid var(--line);padding-bottom:4px;margin-bottom:2px}
+.prof-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:2px 0}
+.prof-row-lbl{font-family:var(--mono);font-size:10px;color:var(--txt3);flex-shrink:0;min-width:90px}
+.prof-row-val{font-family:var(--mono);font-size:10px;color:var(--txt);text-align:right;word-break:break-word}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ TOPBAR ═══════════════ -->
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-logo" viewBox="0 0 28 28" fill="none">
+      <rect x="1.5" y="1.5" width="25" height="25" rx="2" stroke="#00e5ff" stroke-width="1.5"/>
+      <rect x="6" y="6" width="16" height="16" rx="1" stroke="#00e5ff" stroke-width="1" fill="rgba(0,229,255,0.06)" transform="rotate(12 14 14)"/>
+      <circle cx="14" cy="14" r="2.5" fill="#00e5ff"/>
+    </svg>
+    <div class="brand-name">Omni<em>City</em> AI</div>
+  </div>
+
+  <div class="sys-tickers">
+    <div class="ticker"><div class="ticker-dot dot-g" id="tk-sentinel"></div>SENTINEL</div>
+    <div class="ticker"><div class="ticker-dot dot-g" id="tk-grid"></div>GRID <span id="tk-grid-val" style="color:var(--green);margin-left:4px">100%</span></div>
+    <div class="ticker"><div class="ticker-dot dot-g" id="tk-water"></div>WATER <span id="tk-water-val" style="color:var(--green);margin-left:4px">100%</span></div>
+    <div class="ticker"><div class="ticker-dot dot-off" id="tk-emg-dot"></div>INCIDENTS <span id="tk-emg" style="margin-left:4px">0</span></div>
+    <div class="ticker"><div class="ticker-dot dot-g" id="tk-gw-dot"></div>GREEN WAVES <span id="tk-gw" style="color:var(--green);margin-left:4px">0</span></div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="clock" id="top-clock">00:00:00</div>
+    <div class="citizen-chip">
+      <div class="avatar">👤</div>
+      <div>
+        <div class="cname" id="top-name">—</div>
+        <div class="cuid" id="top-uid">—</div>
+      </div>
+    </div>
+    <button class="exit-btn" onclick="doLogout()">⊗ EXIT</button>
+  </div>
+</header>
+
+<!-- ═══════════════ BODY ═══════════════ -->
+<div class="body-layout">
+
+  <!-- Icon sidebar -->
+  <nav class="icon-bar">
+    <div class="ibar-btn active" id="ib-map" onclick="showSection('map',this)" title="City Map">🗺</div>
+    <div class="ibar-btn" id="ib-sentinel" onclick="showSection('sentinel',this)" title="AI Sentinel">👁</div>
+    <div class="ibar-btn" id="ib-traffic" onclick="showSection('traffic',this)" title="Green Wave">🚦</div>
+    <div class="ibar-sep"></div>
+    <div class="ibar-btn" id="ib-power" onclick="showSection('power',this)" title="Power & Billing">⚡</div>
+    <div class="ibar-btn" id="ib-ledger" onclick="showSection('ledger',this)" title="Public Ledger">📋<div class="ibar-badge" id="ib-ledger-badge" style="display:none">0</div></div>
+    <div class="ibar-btn" id="ib-report" onclick="showSection('report',this)" title="File Report">⚠</div>
+    <div class="ibar-sep"></div>
+    <div class="ibar-btn" id="ib-chhaya" onclick="showSection('chhaya',this)" title="Chhaya Escort">🛡</div>
+    <div class="ibar-btn" id="ib-karma" onclick="showSection('karma',this)" title="Trust Engine">◈</div>
+  </nav>
+
+  <!-- ═══ MAP CANVAS (default visible) ═══ -->
+  <div class="map-section" id="sec-map">
+    <div class="map-header">
+      <div class="map-title">⬡ Live Urban Digital Twin — Road Network</div>
+      <div class="map-controls">
+        <button class="map-ctrl-btn active" id="mc-density" onclick="toggleMapLayer('density',this)">Density</button>
+        <button class="map-ctrl-btn" id="mc-signals" onclick="toggleMapLayer('signals',this)">Signals</button>
+        <button class="map-ctrl-btn" id="mc-incidents" onclick="toggleMapLayer('incidents',this)">Incidents</button>
+        <button class="map-ctrl-btn" id="mc-waves" onclick="toggleMapLayer('waves',this)">Green Waves</button>
+      </div>
+    </div>
+    <div class="map-body">
+      <canvas id="map-base" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+      <svg id="city-map" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%">
+        <defs>
+          <filter id="glow-r" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow-a" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow-g" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.4" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+      </svg>
+      <!-- Legend -->
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-line" style="background:var(--road-clear)"></div>Clear &lt;30%</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--road-mod)"></div>Moderate 30–70%</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--road-jam)"></div>Gridlock &gt;70%</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--green);box-shadow:0 0 4px var(--green)"></div>Green Wave active</div>
+      </div>
+      <!-- Incident overlay -->
+      <div class="map-overlay" id="map-inc-overlay">
+        <div class="overlay-title">🔴 Active Incidents</div>
+        <div id="map-inc-list"></div>
+      </div>
+      <!-- Sim time -->
+      <div class="sim-time-badge">SIM <span id="sim-time">—</span></div>
+    </div>
+  </div>
+
+  <!-- ═══ OTHER SECTIONS (hidden, swap in/out) ═══ -->
+  <!-- All non-map sections share this same slot: we swap the map-section -->
+  <!-- Actually we'll overlay a content panel on top of the map area -->
+
+  <!-- Right panel -->
+  <div class="right-panel">
+    <div class="rpanel-tabs">
+      <div class="rpanel-tab active" onclick="showRTab('overview',this)">Overview</div>
+      <div class="rpanel-tab" onclick="showRTab('trust',this)">Trust</div>
+      <div class="rpanel-tab" onclick="showRTab('ledger-rp',this)">Ledger</div>
+    </div>
+    <div class="rpanel-body">
+
+      <!-- ── Overview tab ── -->
+      <div class="rp-panel active" id="rp-overview">
+        <div class="stat-grid">
+          <div class="stat-box sb-c">
+            <div class="stat-lbl">Grid Health</div>
+            <div class="stat-val sv-c" id="ov-grid">—%</div>
+            <div class="prog"><div class="prog-fill" style="background:var(--cyan)" id="ov-grid-bar"></div></div>
+          </div>
+          <div class="stat-box sb-g">
+            <div class="stat-lbl">Water Health</div>
+            <div class="stat-val sv-g" id="ov-water">—%</div>
+            <div class="prog"><div class="prog-fill" style="background:var(--green)" id="ov-water-bar"></div></div>
+          </div>
+          <div class="stat-box sb-r">
+            <div class="stat-lbl">Incidents</div>
+            <div class="stat-val sv-r" id="ov-emg">0</div>
+            <div class="stat-unit">active now</div>
+          </div>
+          <div class="stat-box sb-a">
+            <div class="stat-lbl">Avg Density</div>
+            <div class="stat-val sv-a" id="ov-density">0.00</div>
+            <div class="stat-unit">city-wide</div>
+          </div>
+        </div>
+
+        <div class="section-title">Department Trust Scores</div>
+        <div id="trust-scores">
+          <div class="score-row"><div class="score-dept">Police</div><div class="score-bar"><div class="prog"><div class="prog-fill" style="background:var(--green);width:84%"></div></div></div><div class="score-num" style="color:var(--green)">84</div></div>
+          <div class="score-row"><div class="score-dept">EMS</div><div class="score-bar"><div class="prog"><div class="prog-fill" style="background:var(--green);width:91%"></div></div></div><div class="score-num" style="color:var(--green)">91</div></div>
+          <div class="score-row"><div class="score-dept">Jal Sansthan</div><div class="score-bar"><div class="prog"><div class="prog-fill" style="background:var(--amber);width:58%"></div></div></div><div class="score-num" style="color:var(--amber)">58</div></div>
+          <div class="score-row"><div class="score-dept">PWD</div><div class="score-bar"><div class="prog"><div class="prog-fill" style="background:var(--red);width:32%"></div></div></div><div class="score-num" style="color:var(--red)">32</div></div>
+          <div class="score-row"><div class="score-dept">UPPCL</div><div class="score-bar"><div class="prog"><div class="prog-fill" style="background:var(--amber);width:67%"></div></div></div><div class="score-num" style="color:var(--amber)">67</div></div>
+        </div>
+
+        <div class="section-title" style="margin-top:12px">Event Feed</div>
+        <div id="ov-feed">
+          <div class="empty">Awaiting simulation data…</div>
+        </div>
+      </div>
+
+      <!-- ── Trust tab ── -->
+      <div class="rp-panel" id="rp-trust">
+        <div class="karma-wrap">
+          <svg class="karma-ring-svg" width="72" height="72" viewBox="0 0 72 72" id="karma-ring-svg">
+            <circle cx="36" cy="36" r="30" fill="none" stroke="#182030" stroke-width="6"/>
+            <circle cx="36" cy="36" r="30" fill="none" stroke="var(--green)" stroke-width="6"
+              stroke-dasharray="188.5" stroke-dashoffset="188.5"
+              stroke-linecap="round" transform="rotate(-90 36 36)" id="karma-ring-arc"/>
+            <text x="36" y="41" text-anchor="middle" fill="var(--green)"
+              font-family="'Barlow Condensed',sans-serif" font-size="16" font-weight="900" id="karma-ring-val">—</text>
+          </svg>
+          <div class="karma-details">
+            <div class="karma-name" id="k-name">—</div>
+            <div class="karma-uid" id="k-uid">—</div>
+            <div class="karma-tier" id="k-tier">LOADING</div>
+          </div>
+        </div>
+
+        <div class="section-title">Score Breakdown</div>
+        <div class="score-row">
+          <div class="score-dept" style="font-size:11px">Reports Filed</div>
+          <div class="score-bar"><div class="prog"><div class="prog-fill" style="background:var(--green);width:80%"></div></div></div>
+          <div class="score-num" style="color:var(--green)">+0.4</div>
+        </div>
+        <div class="score-row">
+          <div class="score-dept" style="font-size:11px">Verified</div>
+          <div class="score-bar"><div class="prog"><div class="prog-fill" style="background:var(--cyan);width:100%"></div></div></div>
+          <div class="score-num" style="color:var(--cyan)">+0.3</div>
+        </div>
+        <div class="score-row">
+          <div class="score-dept" style="font-size:11px">Chhaya Usage</div>
+          <div class="score-bar"><div class="prog"><div class="prog-fill" style="background:var(--cyan);width:60%"></div></div></div>
+          <div class="score-num" style="color:var(--cyan)">+0.2</div>
+        </div>
+
+        <div class="section-title" style="margin-top:12px">Ghost Protocol</div>
+        <div style="padding:10px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);font-size:11px;color:var(--txt2);line-height:1.7;margin-bottom:8px">
+          Your biometric data is <strong style="color:var(--cyan)">hashed on-device</strong>. Your identity is linked to a face only during a Chhaya escort session or a verified Threat Event.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--txt2)">Biometric Hashing</span><span class="tag t-g">ACTIVE</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--txt2)">Edge Processing</span><span class="tag t-g">ON-DEVICE</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--txt2)">Identity Linkage</span><span class="tag t-off" id="ghost-id-status">UNLINKED</span></div>
+        </div>
+      </div>
+
+      <!-- ── Ledger tab in right panel ── -->
+      <div class="rp-panel" id="rp-ledger-rp">
+        <div class="section-title">Recent Public Reports</div>
+        <div id="rp-led-list">
+          <div class="empty">Loading…</div>
+        </div>
+        <button class="map-ctrl-btn" style="margin-top:8px;width:100%;padding:7px 0;text-align:center" onclick="loadLedger()">↻ Refresh</button>
+      </div>
+
+    </div><!-- /rpanel-body -->
+  </div><!-- /right-panel -->
+
+</div><!-- /body-layout -->
+
+<!-- ═══════════════════════════════════════════════════════
+  OVERLAY PANELS (swapped over the map area)
+  These are absolutely positioned children of the map-section
+  but sit inside body-layout via fixed overlay approach.
+═══════════════════════════════════════════════════════ -->
+
+<!-- We implement the other sections as full overlays on the map+right area -->
+<style>
+.full-overlay {
+  position:fixed;
+  top:48px; left:52px; right:0; bottom:0;
+  background:var(--bg);
+  z-index:50;
+  display:none;
+  overflow-y:auto;
+  padding:20px;
+}
+.full-overlay.show { display:block; }
+
+.ov-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
+.ov-page-title { font-family:var(--cond); font-size:28px; font-weight:900; text-transform:uppercase; letter-spacing:.06em; color:var(--txt); line-height:1; }
+.ov-page-title em { color:var(--cyan); font-style:normal; }
+.ov-page-sub { font-family:var(--mono); font-size:10px; color:var(--txt2); margin-top:5px; }
+.ov-stat-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:18px; }
+.ov-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.ov-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+@media(max-width:900px){.ov-grid-2,.ov-grid-3{grid-template-columns:1fr;}}
+.ov-card { background:var(--bg2); border:1px solid var(--line2); border-radius:var(--r); overflow:hidden; }
+.ov-card-head { display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--bg3); border-bottom:1px solid var(--line); }
+.ov-card-title { font-family:var(--cond); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--txt); }
+.ov-card-badge { margin-left:auto; font-family:var(--mono); font-size:8px; padding:2px 6px; border-radius:2px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
+.ocb-live { background:var(--redD); color:var(--red); border:1px solid rgba(255,59,92,.3); animation:pulse 1.5s infinite; }
+.ocb-ok   { background:var(--greenD); color:var(--green); border:1px solid rgba(0,255,136,.3); }
+.ocb-off  { background:var(--bg4); color:var(--txt3); border:1px solid var(--line2); }
+.ov-card-body { padding:14px; }
+</style>
+
+<!-- Sentinel overlay -->
+<div class="full-overlay" id="sec-sentinel">
+  <div class="ov-header">
+    <div>
+      <div class="ov-page-title">AI <em>Sentinel</em></div>
+      <div class="ov-page-sub">// autonomous CV-4/5/6 pipeline · multi-sensor fusion · read-only stream</div>
+    </div>
+    <span class="tag t-r" style="font-size:10px;padding:5px 12px" id="sent-alert-badge">● 0 THREATS</span>
+  </div>
+  <div class="ov-stat-row">
+    <div class="stat-box sb-c" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Cameras Online</div>
+      <div class="stat-val sv-c">247</div><div class="stat-unit">96.5% uptime</div>
+    </div>
+    <div class="stat-box sb-r" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Active Threats</div>
+      <div class="stat-val sv-r" id="sent-threats">0</div><div class="stat-unit">verified by fusion</div>
+    </div>
+    <div class="stat-box sb-g" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Avg Response</div>
+      <div class="stat-val sv-g">48s</div><div class="stat-unit">auto-dispatch time</div>
+    </div>
+    <div class="stat-box sb-a" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">False Positives</div>
+      <div class="stat-val sv-a">0.3%</div><div class="stat-unit">fusion filtered</div>
+    </div>
+  </div>
+  <div class="ov-grid-2">
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">🔴 Active Incidents</div><div class="ov-card-badge ocb-live" id="sent-inc-badge">LIVE</div></div>
+      <div class="ov-card-body" id="sent-incidents"><div class="empty">No active incidents.</div></div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">🧪 CV Fusion Log</div><div class="ov-card-badge ocb-ok">STREAMING</div></div>
+      <div class="ov-card-body" style="font-size:10px;line-height:1.9;max-height:300px;overflow-y:auto" id="cv-fusion-log">
+        <div class="cv-line">Waiting for detections…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Green Wave overlay -->
+<div class="full-overlay" id="sec-traffic">
+  <div class="ov-header">
+    <div>
+      <div class="ov-page-title">Green <em>Wave</em></div>
+      <div class="ov-page-sub">// ML-1 route optimizer · autonomous JIT signal control · read-only</div>
+    </div>
+  </div>
+  <div class="ov-stat-row">
+    <div class="stat-box sb-g" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Active Waves</div>
+      <div class="stat-val sv-g" id="gw-active-count">0</div><div class="stat-unit">corridors live</div>
+    </div>
+    <div class="stat-box sb-c" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Avg Density</div>
+      <div class="stat-val sv-c" id="gw-density">0.000</div><div class="stat-unit">city-wide</div>
+    </div>
+    <div class="stat-box sb-a" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Jammed Segments</div>
+      <div class="stat-val sv-a" id="gw-jammed">0</div><div class="stat-unit">density &gt; 0.7</div>
+    </div>
+    <div class="stat-box sb-p" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Anti-Jam Events</div>
+      <div class="stat-val sv-p" id="gw-antijam">0</div><div class="stat-unit">this session</div>
+    </div>
+  </div>
+  <div class="ov-grid-2">
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">⚡ Active Green Waves</div><div class="ov-card-badge ocb-ok" id="gw-badge">ML-1 AUTO</div></div>
+      <div class="ov-card-body" id="gw-active-list"><div class="empty">No emergency corridors active.</div></div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">📊 Top Congested Segments</div></div>
+      <div class="ov-card-body" id="gw-congested-list"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+  <div style="margin-top:14px">
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">🔁 Anti-Jam Relief Log</div><div class="ov-card-badge ocb-ok">ML-1</div></div>
+      <div class="ov-card-body" id="gw-jam-log"><div class="empty">No anti-jam events yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Power overlay -->
+<div class="full-overlay" id="sec-power">
+  <div class="ov-header">
+    <div>
+      <div class="ov-page-title">Power &amp; <em>Billing</em></div>
+      <div class="ov-page-sub">// utility grid health · auto compensation engine · read-only</div>
+    </div>
+  </div>
+  <div class="ov-stat-row">
+    <div class="stat-box sb-c" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Grid Health</div>
+      <div class="stat-val sv-c" id="pwr-grid">—%</div>
+    </div>
+    <div class="stat-box sb-g" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Water Health</div>
+      <div class="stat-val sv-g" id="pwr-water">—%</div>
+    </div>
+    <div class="stat-box sb-p" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Auto Credits</div>
+      <div class="stat-val sv-p" id="pwr-credits">₹0</div><div class="stat-unit">issued this session</div>
+    </div>
+    <div class="stat-box sb-r" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Citizens Affected</div>
+      <div class="stat-val sv-r" id="pwr-affected">0</div>
+    </div>
+  </div>
+  <div class="ov-grid-2">
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">💳 Auto Compensation Engine</div><div class="ov-card-badge ocb-ok">AUTONOMOUS</div></div>
+      <div class="ov-card-body">
+        <div style="font-size:11px;color:var(--txt2);line-height:1.8;margin-bottom:10px">
+          When the simulation confirms a power blackout or water pressure failure, the Smart-Billing engine automatically calculates and issues utility credit tokens to all citizens in the affected zone — zero human approval required.
+        </div>
+        <div id="pwr-credit-records"><div class="empty">No affected zones currently.</div></div>
+      </div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">📊 Your Utility Account</div></div>
+      <div class="ov-card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="padding:10px;background:var(--bg3);border:1px solid var(--line);border-radius:var(--r)">
+            <div style="font-family:var(--mono);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Monthly Bill</div>
+            <div style="font-family:var(--cond);font-size:20px;font-weight:900;color:var(--txt)">₹840</div>
+          </div>
+          <div style="padding:10px;background:var(--bg3);border:1px solid rgba(180,77,255,.2);border-radius:var(--r)">
+            <div style="font-family:var(--mono);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Auto Credits</div>
+            <div style="font-family:var(--cond);font-size:20px;font-weight:900;color:var(--purple)" id="pwr-mycredits">−₹0</div>
+          </div>
+        </div>
+        <div style="padding:10px;background:var(--greenD);border:1px solid rgba(0,255,136,.2);border-radius:var(--r)">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--green)">NET PAYABLE</div>
+          <div style="font-family:var(--cond);font-size:24px;font-weight:900;color:var(--green)" id="pwr-net">₹840.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ledger overlay -->
+<div class="full-overlay" id="sec-ledger">
+  <div class="ov-header">
+    <div>
+      <div class="ov-page-title">Public <em>Ledger</em></div>
+      <div class="ov-page-sub">// authority accountability · SLA tracking · fully transparent</div>
+    </div>
+    <span class="tag t-r" style="font-size:10px;padding:5px 12px" id="led-breach-badge">0 SLA BREACHED</span>
+  </div>
+  <div class="ov-stat-row">
+    <div class="stat-box sb-c" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Total Reports</div><div class="stat-val sv-c" id="led-total">0</div>
+    </div>
+    <div class="stat-box sb-r" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">SLA Breached</div><div class="stat-val sv-r" id="led-breached">0</div>
+    </div>
+    <div class="stat-box sb-g" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Resolved</div><div class="stat-val sv-g" id="led-resolved">0</div>
+    </div>
+    <div class="stat-box sb-a" style="background:var(--bg2);border:1px solid var(--line)">
+      <div class="stat-lbl">Open</div><div class="stat-val sv-a" id="led-open">0</div>
+    </div>
+  </div>
+  <div class="ov-card">
+    <div class="ov-card-head">
+      <div class="ov-card-title">📋 Live Report Feed</div>
+      <div class="ov-card-badge ocb-live">PUBLIC</div>
+      <button class="map-ctrl-btn" style="margin-left:8px" onclick="loadLedger()">↻ Refresh</button>
+    </div>
+    <div class="ov-card-body" id="led-full-list"><div class="empty">Loading…</div></div>
+  </div>
+</div>
+
+<!-- Report overlay -->
+<div class="full-overlay" id="sec-report">
+  <div class="ov-header">
+    <div>
+      <div class="ov-page-title">File <em>Report</em></div>
+      <div class="ov-page-sub">// AI photo verification · karma engine · live dispatch · public ledger</div>
+    </div>
+  </div>
+  <div class="ov-grid-2">
+    <!-- LEFT: FORM -->
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">⚠ New Incident Report</div></div>
+      <div class="ov-card-body">
+        <div class="notice" id="rep-notice"></div>
+
+        <!-- AI Verifying spinner -->
+        <div id="rep-verifying" style="display:none;text-align:center;padding:18px 0">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--cyan);margin-bottom:10px;letter-spacing:.1em">
+            🔍 AI VERIFICATION IN PROGRESS…
+          </div>
+          <div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">
+            Analyzing photos · Checking authenticity · Determining authorities
+          </div>
+          <div id="rep-verify-steps" style="margin-top:12px;font-family:var(--mono);font-size:9px;color:var(--txt3);text-align:left;line-height:2"></div>
+        </div>
+
+        <!-- AI Verdict card (shows after verification) -->
+        <div id="rep-verdict-card" style="display:none;margin-bottom:14px;border:1px solid rgba(255,255,255,.08);border-radius:6px;overflow:hidden">
+          <div id="rep-verdict-header" style="padding:8px 12px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em"></div>
+          <div style="padding:10px 12px;font-size:11px;color:var(--txt2)" id="rep-verdict-body"></div>
+        </div>
+
+        <!-- FORM (hidden during verification) -->
+        <div id="rep-form-body">
+          <div class="field">
+            <label class="field-lbl">Incident Category *</label>
+            <select id="rep-cat">
+              <option value="">— Select —</option>
+              <option value="GRID_BLACKOUT">⚡ Power Grid Failure</option>
+              <option value="PIPE_BURST">💧 Water Pipeline Burst</option>
+              <option value="ACCIDENT">🚗 Traffic Accident</option>
+              <option value="FIRE">🔥 Fire / Smoke</option>
+              <option value="THEFT">🔓 Theft / Crime</option>
+              <option value="WEAPON">🔫 Weapon / Threat</option>
+              <option value="ROAD_DEBRIS">🪨 Road Obstruction</option>
+              <option value="OTHER">📋 Other</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-lbl">Location / Sector *</label>
+            <select id="rep-loc">
+              <option value="">— Select Sector —</option>
+              <option value="[2,3]">Sector A — Residential North</option>
+              <option value="[5,8]">Sector B — Commercial District</option>
+              <option value="[8,12]">Sector C — Market Zone</option>
+              <option value="[11,4]">Sector D — Industrial West</option>
+              <option value="[14,15]">Sector E — Transit Hub</option>
+              <option value="[3,17]">Sector F — Park &amp; Rec</option>
+              <option value="[17,7]">Sector G — Residential South</option>
+              <option value="[9,9]">Sector H — City Centre</option>
+              <option value="[6,14]">Sector I — Educational Zone</option>
+              <option value="[13,2]">Sector J — Industrial East</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-lbl">Description *</label>
+            <textarea id="rep-desc" placeholder="What did you see? Be specific about location, time, and people involved…"></textarea>
+          </div>
+
+          <!-- PHOTO UPLOAD — TWO PHOTOS REQUIRED -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+            <div>
+              <label class="field-lbl">📷 Photo 1 (Evidence) *</label>
+              <div id="photo1-drop" onclick="document.getElementById('photo1-input').click()"
+                style="border:1px dashed rgba(255,255,255,.2);border-radius:5px;padding:14px 8px;text-align:center;cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--txt3);transition:border-color .2s;min-height:70px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px"
+                onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'">
+                <span style="font-size:18px">📷</span>
+                <span>Click to upload</span>
+              </div>
+              <input type="file" id="photo1-input" accept="image/*" style="display:none" onchange="previewPhoto(1,this)"/>
+              <img id="photo1-preview" style="display:none;width:100%;border-radius:4px;margin-top:6px;border:1px solid rgba(0,255,255,.2);max-height:90px;object-fit:cover"/>
+            </div>
+            <div>
+              <label class="field-lbl">📷 Photo 2 (Evidence) *</label>
+              <div id="photo2-drop" onclick="document.getElementById('photo2-input').click()"
+                style="border:1px dashed rgba(255,255,255,.2);border-radius:5px;padding:14px 8px;text-align:center;cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--txt3);transition:border-color .2s;min-height:70px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px"
+                onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'">
+                <span style="font-size:18px">📷</span>
+                <span>Click to upload</span>
+              </div>
+              <input type="file" id="photo2-input" accept="image/*" style="display:none" onchange="previewPhoto(2,this)"/>
+              <img id="photo2-preview" style="display:none;width:100%;border-radius:4px;margin-top:6px;border:1px solid rgba(0,255,255,.2);max-height:90px;object-fit:cover"/>
+            </div>
+          </div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:12px;padding:6px 10px;background:rgba(255,170,0,.05);border-left:2px solid var(--amber);border-radius:2px">
+            ⚠ Both photos are REQUIRED. The AI will verify they match your selected incident type.<br>
+            <span style="color:var(--red)">Fake or unrelated photos will reduce your Karma score.</span>
+          </div>
+
+          <button class="btn-submit" id="rep-btn" onclick="submitReport()">🔍 Submit for AI Verification</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: INFO + MY REPORTS -->
+    <div>
+      <div class="ov-card">
+        <div class="ov-card-head"><div class="ov-card-title">🤖 How AI Verification Works</div></div>
+        <div class="ov-card-body" style="font-size:11px;color:var(--txt2);line-height:1.9">
+          <div style="display:flex;gap:10px;margin-bottom:6px"><span style="color:var(--cyan);font-family:var(--mono)">01</span><span>Upload <strong style="color:var(--txt)">2 photos</strong> of the incident as evidence.</span></div>
+          <div style="display:flex;gap:10px;margin-bottom:6px"><span style="color:var(--cyan);font-family:var(--mono)">02</span><span>Claude Vision <strong style="color:var(--txt)">analyzes both photos</strong> — checks if they match the claim and are authentic.</span></div>
+          <div style="display:flex;gap:10px;margin-bottom:6px"><span style="color:var(--cyan);font-family:var(--mono)">03</span><span>AI determines <strong style="color:var(--txt)">severity</strong> (LOW/MEDIUM/HIGH/CRITICAL) and which <strong style="color:var(--txt)">authorities</strong> to dispatch.</span></div>
+          <div style="display:flex;gap:10px;margin-bottom:6px"><span style="color:var(--cyan);font-family:var(--mono)">04</span><span>If verified: vehicles spawn in city + ML-1 triggers a <strong style="color:var(--green)">Green Wave</strong> to the incident site.</span></div>
+          <div style="display:flex;gap:10px;margin-bottom:6px"><span style="color:var(--cyan);font-family:var(--mono)">05</span><span>Report appears on the <strong style="color:var(--txt)">Public Ledger</strong> as STARTED → IN PROGRESS → DONE.</span></div>
+          <div style="display:flex;gap:10px"><span style="color:var(--red);font-family:var(--mono)">⚠</span><span style="color:var(--red)">Fake reports: <strong>Karma penalty</strong> based on severity of the lie.</span></div>
+        </div>
+      </div>
+      <div class="ov-card" style="margin-top:12px">
+        <div class="ov-card-head">
+          <div class="ov-card-title">📊 Your Reports</div>
+          <button class="map-ctrl-btn" style="padding:3px 10px;font-size:9px" onclick="loadMyReports()">↻</button>
+        </div>
+        <div class="ov-card-body" id="rep-my-reports"><div class="empty">None yet.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chhaya overlay -->
+<div class="full-overlay" id="sec-chhaya">
+  <div class="ov-header">
+    <div>
+      <div class="ov-page-title">Chhaya <em>Protocol</em></div>
+      <div class="ov-page-sub">// AI-2 safety escort · ghost protocol · live danger detection · camera handoff</div>
+    </div>
+    <span class="tag" id="chhaya-global-badge" style="font-size:10px;padding:5px 12px;background:var(--cyanD);color:var(--cyan);border:1px solid var(--cyanB)">STANDBY</span>
+  </div>
+  <div class="ov-grid-2">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <!-- Activate card -->
+      <div class="chhaya-card" id="chhaya-card">
+        <div class="chhaya-title" id="chhaya-title">Safety Escort — Inactive</div>
+        <div class="chhaya-sub" id="chhaya-sub">AI-2 will track you camera-to-camera and alert the nearest patrol if you're followed or enter a risk zone.</div>
+        <div style="margin-top:10px">
+          <button onclick="openWalker()" style="padding:7px 14px;background:rgba(0,200,255,0.08);border:1px solid rgba(0,200,255,0.25);border-radius:3px;color:var(--cyan);font-family:var(--mono);font-size:10px;letter-spacing:.07em;cursor:pointer">
+            ⊞ OPEN CITIZEN WALKER — move on the live city grid
+          </button>
+        </div>
+        <div class="toggle-row" onclick="toggleChhaya()">
+          <div class="sw" id="chhaya-sw"></div>
+          <span class="toggle-lbl" id="chhaya-lbl">Activate Escort</span>
+        </div>
+      </div>
+
+      <!-- AI-1 Trust Gate -->
+      <div style="padding:10px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r)" id="ch-trust-row">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--txt3);letter-spacing:.1em">AI-1 TRUST SCORE</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--cyan)" id="ch-trust-score">—</span>
+        </div>
+        <div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:5px">
+          <div id="ch-trust-bar" style="height:100%;border-radius:2px;width:0%;background:var(--cyan);transition:width .6s ease"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--txt3)" id="ch-trust-penalty">—</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--txt3)" id="ch-fraud-prob">FRAUD RISK: —</span>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
+        <div style="padding:9px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);text-align:center">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:3px">NODE</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--cyan)" id="ch-node">—</div>
+        </div>
+        <div style="padding:9px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);text-align:center">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:3px">HANDOFFS</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--txt)" id="ch-handoffs">—</div>
+        </div>
+        <div style="padding:9px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);text-align:center">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:3px">DURATION</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--txt)" id="ch-duration">—</div>
+        </div>
+      </div>
+
+      <!-- AI-2 DANGER METER -->
+      <div style="padding:12px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r)" id="ch-danger-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--txt3);letter-spacing:.1em">AI-2 DANGER LEVEL</span>
+          <span style="font-family:var(--mono);font-size:14px;font-weight:900;color:var(--green)" id="ch-danger-num">0</span>
+        </div>
+        <div style="height:8px;background:var(--bg3);border-radius:4px;margin-bottom:8px;overflow:hidden">
+          <div id="ch-danger-bar" style="height:100%;width:0%;border-radius:4px;background:var(--green);transition:width .4s ease,background .4s ease"></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;padding:6px 10px;border-radius:3px;background:var(--bg3);border-left:2px solid var(--green)" id="ch-alert-msg">
+          Awaiting activation…
+        </div>
+        <div style="margin-top:6px;display:flex;gap:8px">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--txt3)">ACTION:</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--cyan)" id="ch-action">—</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-left:auto">STALKER:</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--red)" id="ch-stalker">NONE</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Ghost Protocol + Log -->
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">🔐 Ghost Protocol</div></div>
+      <div class="ov-card-body">
+        <div style="margin-bottom:12px;font-size:11px;color:var(--txt2);line-height:1.8">
+          Under the Ghost Protocol, your biometric identity is <strong style="color:var(--cyan)">hashed and never stored in plaintext</strong>. Camera feeds are processed on-device. Your face is only linked to your Citizen ID during an active escort or a Threat Event.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--txt2)">Biometric Hashing</span><span class="tag t-g">ACTIVE</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--txt2)">Edge Processing</span><span class="tag t-g">ON-DEVICE</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--txt2)">Identity Linkage</span><span class="tag t-off" id="ch-id-status">UNLINKED</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--txt2)">Patrol Alert</span><span class="tag t-a" id="ch-patrol-tag">ARMED</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--txt2)">AI-2 Status</span><span class="tag t-off" id="ch-ai2-tag">OFFLINE</span></div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--r);padding:10px;font-family:var(--mono);font-size:9px;line-height:2;color:var(--txt3);max-height:200px;overflow-y:auto" id="ch-log">
+          Awaiting activation…
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Karma overlay -->
+<div class="full-overlay" id="sec-karma">
+  <div class="ov-header">
+    <div>
+      <div class="ov-page-title">Trust <em>Engine</em></div>
+      <div class="ov-page-sub">// citizen karma · civic profile · identity integrity</div>
+    </div>
+  </div>
+
+  <!-- ── Citizen Profile Card ── -->
+  <div class="ov-card" style="margin-bottom:14px">
+    <div class="ov-card-head">
+      <div class="ov-card-title">🪪 Citizen Identity Profile</div>
+    </div>
+    <div class="ov-card-body" id="profile-card" style="color:var(--txt2);font-family:var(--mono);font-size:12px">
+      Loading profile…
+    </div>
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r);padding:20px;display:flex;align-items:center;gap:20px;margin-bottom:14px">
+    <svg width="90" height="90" viewBox="0 0 90 90">
+      <circle cx="45" cy="45" r="38" fill="none" stroke="#182030" stroke-width="7"/>
+      <circle cx="45" cy="45" r="38" fill="none" stroke="var(--green)" stroke-width="7"
+        stroke-dasharray="238.8" stroke-dashoffset="238.8"
+        stroke-linecap="round" transform="rotate(-90 45 45)" id="karma-ov-arc"/>
+      <text x="45" y="51" text-anchor="middle" fill="var(--green)"
+        font-family="'Barlow Condensed',sans-serif" font-size="20" font-weight="900" id="karma-ov-val">—</text>
+    </svg>
+    <div style="flex:1">
+      <div style="font-family:var(--cond);font-size:24px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--txt)" id="karma-ov-name">—</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);margin-top:3px" id="karma-ov-uid">—</div>
+      <div class="karma-tier" id="karma-ov-tier">LOADING</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--txt3)">CIVIC REWARDS</div>
+      <div style="font-family:var(--cond);font-size:30px;font-weight:900;color:var(--amber)">3</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--txt3)">unlocked</div>
+    </div>
+  </div>
+  <div class="ov-grid-2">
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">📈 Score Breakdown</div></div>
+      <div class="ov-card-body">
+        <div class="score-row"><div class="score-dept" style="font-size:11px">Reports Filed</div><div class="score-bar"><div class="prog"><div class="prog-fill" id="karma-bar-reports" style="background:var(--green);width:80%"></div></div></div><div class="score-num" style="color:var(--green)" id="karma-num-reports">+0.4</div></div>
+        <div class="score-row"><div class="score-dept" style="font-size:11px">Verified</div><div class="score-bar"><div class="prog"><div class="prog-fill" id="karma-bar-verified" style="background:var(--cyan);width:100%"></div></div></div><div class="score-num" style="color:var(--cyan)" id="karma-num-verified">+0.3</div></div>
+        <div class="score-row"><div class="score-dept" style="font-size:11px">Chhaya Usage</div><div class="score-bar"><div class="prog"><div class="prog-fill" id="karma-bar-chhaya" style="background:var(--cyan);width:60%"></div></div></div><div class="score-num" style="color:var(--cyan)" id="karma-num-chhaya">+0.2</div></div>
+        <div class="score-row"><div class="score-dept" style="font-size:11px">False Reports</div><div class="score-bar"><div class="prog"><div class="prog-fill" id="karma-bar-penalty" style="background:var(--red);width:0%"></div></div></div><div class="score-num" style="color:var(--txt3)" id="karma-num-penalty">0</div></div>
+      </div>
+
+      <!-- Facilities Panel -->
+      <div class="ov-card" style="margin-top:14px">
+        <div class="ov-card-hdr" style="display:flex;align-items:center;justify-content:space-between">
+          <span>CITY FACILITIES ACCESS</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--txt3)" id="karma-rewards-count">—</span>
+        </div>
+        <div class="ov-card-body" id="karma-facilities">
+          <div class="empty">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Karma Event Log -->
+      <div class="ov-card" style="margin-top:14px">
+        <div class="ov-card-hdr">KARMA EVENT LOG</div>
+        <div class="ov-card-body" id="karma-event-log" style="max-height:240px;overflow-y:auto">
+          <div class="empty">No events yet.</div>
+        </div>
+      </div>
+
+      <div style="display:none"><!-- closed by original HTML below -->
+      </div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-card-head"><div class="ov-card-title">🎖 Civic Rewards</div></div>
+      <div class="ov-card-body" style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--greenD);border:1px solid rgba(0,255,136,.2);border-radius:var(--r)"><span style="font-size:18px">🚌</span><div><div style="font-family:var(--cond);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--txt)">Free City Bus Pass</div><div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:2px">Karma ≥ 1.5 · UNLOCKED</div></div><span class="tag t-g" style="margin-left:auto">ACTIVE</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--greenD);border:1px solid rgba(0,255,136,.2);border-radius:var(--r)"><span style="font-size:18px">⚡</span><div><div style="font-family:var(--cond);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--txt)">10% Utility Discount</div><div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:2px">Karma ≥ 1.8 · UNLOCKED</div></div><span class="tag t-g" style="margin-left:auto">ACTIVE</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg3);border:1px solid var(--line);border-radius:var(--r);opacity:.5"><span style="font-size:18px">🏛</span><div><div style="font-family:var(--cond);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--txt)">Priority Govt Services</div><div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:2px">Karma ≥ 2.5 · Needs 0.5 more</div></div><span class="tag t-a" style="margin-left:auto">LOCKED</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+  JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
+<script>
+// ─────────────────────────────────────────────────────
+// API CONFIG
+// ─────────────────────────────────────────────────────
+const API = (() => {
+  if (window._OMNI_API_OVERRIDE) return window._OMNI_API_OVERRIDE;
+  const h = window.location.hostname;
+  if (window.location.protocol === 'file:' || !h || h === 'localhost' || h === '127.0.0.1')
+    return 'http://localhost:8000';
+  return window.location.origin;
+})();
+
+// ─────────────────────────────────────────────────────
+// SESSION STATE
+// ─────────────────────────────────────────────────────
+const S = {
+  citizen:      null,
+  chhayaActive: false,
+  chhayaTimer:  null,
+  chhayaStart:  null,
+  chhayaHandoffs: 0,
+  _walkerChannel: null,
+  _chhayaChannel: null,    // listens for DANGER_UPDATE from walker
+  _lastDangerTs:  0,       // timestamp of last walker-sourced danger update
+  clockInt:     null,
+  liveMapInt:   null,
+  sentinelInt:  null,
+  trafficInt:   null,
+  ledgerData:   [],
+  mapLayers:    { density:true, signals:false, incidents:false, waves:false },
+  mapW:0, mapH:0,
+  antijamTotal: 0,
+};
+
+// ─────────────────────────────────────────────────────
+// ENTRY — reads citizen from localStorage (set by index.html on auth)
+// ─────────────────────────────────────────────────────
+window.enterDashboard = function(citizen) {
+  S.citizen = citizen;
+  document.getElementById('top-name').textContent = citizen.name || '—';
+  document.getElementById('top-uid').textContent  = (citizen.citizen_uid||'').slice(0,10)+'…';
+  const ks = parseFloat(citizen.karma_score) || 1.0;
+  populateKarma(ks, citizen.name, citizen.citizen_uid);
+  // Fetch and populate full profile card
+  fetchAndPopulateProfile(citizen.citizen_uid);
+  startClock();
+  startLiveMap();
+  startSentinel();
+  startTraffic();
+  loadLedger();
+  setInterval(loadLedger, 5000);   // live work_status polling
+  if (S.citizen) loadChhayaTrustScore();
+};
+
+// Boot from localStorage when opened directly from index.html redirect
+(function bootFromStorage() {
+  try {
+    const raw = localStorage.getItem('omni_citizen');
+    if (!raw) return;   // opened standalone — wait for postMessage
+    const citizen = JSON.parse(raw);
+    // Override API base if index.html saved it
+    const savedApi = localStorage.getItem('omni_api');
+    if (savedApi) window._OMNI_API_OVERRIDE = savedApi;
+    window.enterDashboard(citizen);
+  } catch(e) { console.warn('Could not boot from storage', e); }
+})();
+
+// postMessage bridge (when embedded as iframe)
+window.addEventListener('message', e => {
+  if (e.data && e.data.type === 'OMNI_AUTH') {
+    window.enterDashboard(e.data.citizen);
+  }
+});
+
+// returnToGate hook
+window.returnToGate = function() {};
+
+// ─────────────────────────────────────────────────────
+// CLOCK
+// ─────────────────────────────────────────────────────
+function startClock() {
+  const tick = () => {
+    document.getElementById('top-clock').textContent =
+      new Date().toLocaleTimeString('en-IN',{hour12:false}) + ' IST';
+  };
+  tick();
+  S.clockInt = setInterval(tick, 1000);
+}
+
+// ─────────────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────────────
+const SECTIONS = ['sentinel','traffic','power','ledger','report','chhaya','karma'];
+
+function showSection(id, btn) {
+  // Hide all overlays
+  SECTIONS.forEach(s => document.getElementById(`sec-${s}`).classList.remove('show'));
+  // Show map or overlay
+  const mapSec = document.getElementById('sec-map');
+  if (id === 'map') {
+    mapSec.style.display = '';
+    document.getElementById('sec-map').style.display = '';
+  } else {
+    mapSec.style.display = '';  // keep visible behind
+    document.getElementById(`sec-${id}`).classList.add('show');
+  }
+  // Sidebar active
+  document.querySelectorAll('.ibar-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Trigger data loads when section opens
+  if (id === 'ledger')  loadLedger();
+  if (id === 'report')  { loadMyReports(); }
+}
+
+function showRTab(id, tabEl) {
+  document.querySelectorAll('.rp-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.rpanel-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`rp-${id}`).classList.add('active');
+  if (tabEl) tabEl.classList.add('active');
+}
+
+function toggleMapLayer(layer, btn) {
+  S.mapLayers[layer] = !S.mapLayers[layer];
+  btn.classList.toggle('active', S.mapLayers[layer]);
+  renderMapOverlays();
+}
+
+// ─────────────────────────────────────────────────────
+// LOGOUT
+// ─────────────────────────────────────────────────────
+function doLogout() {
+  clearInterval(S.clockInt);
+  clearInterval(S.liveMapInt);
+  clearInterval(S.sentinelInt);
+  clearInterval(S.trafficInt);
+  clearInterval(S.chhayaTimer);
+  if (S._walkerChannel) { try { S._walkerChannel.close(); } catch(e){} S._walkerChannel = null; }
+  if (S._chhayaChannel) { try { S._chhayaChannel.close(); } catch(e){} S._chhayaChannel = null; }
+  S._lastDangerTs = 0;
+  S.citizen = null;
+  // Clear session from storage
+  try {
+    localStorage.removeItem('omni_citizen');
+    localStorage.removeItem('omni_api');
+    localStorage.removeItem('omni_walker_node');
+    localStorage.removeItem('omni_walker_citizen');
+  } catch(e) {}
+  window.parent.postMessage({ type: 'OMNI_LOGOUT' }, '*');
+  if (typeof window.returnToGate === 'function') window.returnToGate();
+  else window.location.href = 'index.html';
+}
+
+function openWalker() {
+  if (!S.citizen) { alert('Log in first to open the walker.'); return; }
+  try {
+    localStorage.setItem('omni_walker_citizen', JSON.stringify({
+      uid:  S.citizen.citizen_uid,
+      name: S.citizen.name,
+      node: S.citizen.grid_node || [10, 10],
+      api:  typeof API !== 'undefined' ? API : 'http://localhost:8000',
+    }));
+  } catch(e) {}
+  window.open('citizen_walker.html', 'OmniCityWalker',
+    'width=960,height=680,resizable=yes,toolbar=no,menubar=no,scrollbars=no');
+}
+
+// ─────────────────────────────────────────────────────
+// LIVE MAP — organic city canvas base + SVG data overlay
+// ─────────────────────────────────────────────────────
+const GRID_ROWS = 20, GRID_COLS = 20;
+let _lastMapData = null;
+let _svgBuilt    = false;   // SVG data layer (kept intact)
+let _baseBuilt   = false;   // Canvas geo layer
+let _animFrame   = null;
+
+// ── City geography ────────────────────────────────────────────────────────────
+
+// Named districts: [r1,c1,r2,c2, name, zone]
+const DISTRICTS = [
+  // [r1,c1,r2,c2, name, zone]  — kept for district label/fill rendering
+  [0,0,5,5,    'Sector 1',  'ind'],
+  [0,6,4,12,   'Sector 2',  'res'],
+  [0,13,4,19,  'Sector 3',  'com'],
+  [5,0,10,4,   'Sector 4',  'res'],
+  [5,5,9,10,   'Sector 5',  'her'],
+  [5,11,9,15,  'Sector 6',  'com'],
+  [5,16,9,19,  'Sector 7',  'res'],
+  [10,0,15,5,  'Sector 8',  'civ'],
+  [10,6,14,11, 'Sector 9',  'com'],
+  [10,12,14,19,'Sector 10', 'res'],
+  [15,0,19,6,  'Sector 11', 'ind'],
+  [15,7,19,12, 'Sector 12', 'civ'],
+  [15,13,19,19,'Sector 13', 'res'],
+];
+
+const ZONE_FILL = {
+  ind:'rgba(255,120,0,0.045)',  res:'rgba(0,200,255,0.030)',
+  com:'rgba(160,60,255,0.045)',  her:'rgba(255,180,0,0.055)',
+  civ:'rgba(0,255,120,0.035)',
+};
+const ZONE_EDGE = {
+  ind:'rgba(255,120,0,0.16)',   res:'rgba(0,200,255,0.09)',
+  com:'rgba(160,60,255,0.13)',   her:'rgba(255,180,0,0.18)',
+  civ:'rgba(0,255,120,0.12)',
+};
+
+// Landmark nodes: [r, c, label]  — no emojis, text-only pins
+const LANDMARKS = [
+  [1,2,  'Power Plant'],
+  [2,17, 'Power Plant'],
+  [6,7,  'Old Chowk'],
+  [7,12, 'City Hall'],
+  [9,2,  'Grid Station'],
+  [11,10,'Hospital'],
+  [12,16,'Tech Univ'],
+  [17,7, 'Bus Depot'],
+  [3,10, 'Data Centre'],
+  [14,3, 'Water Point'],
+  [5,5,  'Central Mkt'],
+  [16,14,'Civic Court'],
+];
+
+// Arterial roads — irregular, non-symmetric waypoints for organic look
+const ARTERIALS = [
+  // Outer ring — slightly off-centre loop
+  [[0,3],[2,7],[3,12],[2,16],[5,18],[9,19],[13,18],[17,17],[19,14],[19,8],[18,4],[16,1],[12,0],[7,1],[3,1],[0,3]],
+  // Inner ring — asymmetric loop around central hub
+  [[4,6],[5,9],[5,13],[7,15],[10,14],[12,11],[12,7],[10,5],[7,4],[4,6]],
+  // Major E-W boulevards
+  [[0,0],[2,4],[3,9],[4,14],[3,18]],
+  [[7,0],[8,5],[9,9],[8,13],[9,18]],
+  [[13,1],[13,6],[14,10],[13,15],[14,19]],
+  [[18,0],[17,5],[18,10],[17,14],[18,19]],
+  // Major N-S spines — with drift
+  [[0,5],[3,5],[6,6],[9,5],[12,5],[15,4],[19,5]],
+  [[0,10],[2,11],[5,10],[8,10],[11,10],[14,11],[19,10]],
+  [[0,14],[2,15],[5,15],[8,14],[11,15],[14,15],[19,15]],
+  // Diagonal cuts
+  [[0,0],[3,3],[6,5]],
+  [[0,19],[2,16],[5,14]],
+  [[19,0],[16,3],[13,6]],
+  [[19,19],[17,16],[14,14]],
+  // Short connector spurs
+  [[6,7],[8,9],[9,10]],
+  [[9,10],[10,12],[12,13]],
+  [[5,13],[7,14],[8,15]],
+];
+
+// ── Canvas helpers ────────────────────────────────────────────────────────────
+function _getM(canvas) {
+  const b = canvas.getBoundingClientRect();
+  const W = b.width  > 20 ? b.width  : canvas.parentElement.clientWidth  || 860;
+  const H = b.height > 20 ? b.height : canvas.parentElement.clientHeight || 580;
+  const dpr  = window.devicePixelRatio || 1;
+  const PAD  = 34;
+  const cW   = (W - PAD*2) / (GRID_COLS-1);
+  const cH   = (H - PAD*2) / (GRID_ROWS-1);
+  return {W,H,dpr,PAD,cW,cH};
+}
+
+function _rsz(c,W,H,dpr) {
+  const tw=Math.round(W*dpr),th=Math.round(H*dpr);
+  if(c.width!==tw||c.height!==th){c.width=tw;c.height=th;c.style.width=W+'px';c.style.height=H+'px';}
+}
+
+// Grid node → canvas pixel
+// Heavy jitter on all non-arterial nodes — this is what makes roads look
+// like real city streets instead of a grid. Arterial intersections (every
+// 4th row or col) stay anchored so the main roads flow smoothly.
+const _JITTER = {};
+function _pt(r,c,m) {
+  const key=`${r},${c}`;
+  if(!_JITTER[key]) {
+    // Arterial corridors: rows 0,4,8,12,16,19 and cols 0,4,8,12,16,19
+    const onArterial = (r%4===0 || c%4===0 || r===19 || c===19);
+    // Off-arterial blocks: very high jitter → genuinely irregular city blocks
+    const spread = onArterial ? 0.08 : 0.55;
+    const jx = (Math.random()-0.5) * m.cW * spread;
+    const jy = (Math.random()-0.5) * m.cH * spread;
+    _JITTER[key] = {jx,jy};
+  }
+  return {
+    x: m.PAD + c*m.cW + _JITTER[key].jx,
+    y: m.PAD + r*m.cH + _JITTER[key].jy,
+  };
+}
+
+// Draw a smooth curve through an array of {x,y} points using Catmull-Rom
+function _curve(ctx, pts) {
+  if(pts.length<2) return;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for(let i=0;i<pts.length-1;i++) {
+    const p0 = pts[Math.max(0,i-1)];
+    const p1 = pts[i];
+    const p2 = pts[i+1];
+    const p3 = pts[Math.min(pts.length-1,i+2)];
+    const cp1x = p1.x + (p2.x-p0.x)/6;
+    const cp1y = p1.y + (p2.y-p0.y)/6;
+    const cp2x = p2.x - (p3.x-p1.x)/6;
+    const cp2y = p2.y - (p3.y-p1.y)/6;
+    ctx.bezierCurveTo(cp1x,cp1y,cp2x,cp2y,p2.x,p2.y);
+  }
+  ctx.stroke();
+}
+
+// ── BASE MAP (canvas, drawn once) ─────────────────────────────────────────────
+function _buildBaseMap() {
+  const canvas = document.getElementById('map-base');
+  if(!canvas) return;
+  const m = _getM(canvas);
+  if(m.W<30||m.H<30){ requestAnimationFrame(_buildBaseMap); return; }
+  _rsz(canvas,m.W,m.H,m.dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(m.dpr,0,0,m.dpr,0,0);
+  ctx.clearRect(0,0,m.W,m.H);
+
+  // 1. Background
+  ctx.fillStyle='#060a10'; ctx.fillRect(0,0,m.W,m.H);
+  // Ambient centre glow
+  const ag=ctx.createRadialGradient(m.W/2,m.H/2,0,m.W/2,m.H/2,Math.max(m.W,m.H)*0.7);
+  ag.addColorStop(0,'rgba(0,40,80,0.45)'); ag.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=ag; ctx.fillRect(0,0,m.W,m.H);
+
+  // 2. District fills — drawn as irregular polygons using the corner nodes
+  // instead of rectangles, so they follow the organic road grid
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  DISTRICTS.forEach(([r1,c1,r2,c2,name,zone])=>{
+    // Build polygon from the four corner jittered positions + edge midpoints
+    // for an 8-point irregular shape that looks like a real city block
+    const corners = [
+      _pt(r1,c1,m), _pt(r1,Math.floor((c1+c2)/2),m), _pt(r1,c2,m),
+      _pt(Math.floor((r1+r2)/2),c2,m), _pt(r2,c2,m),
+      _pt(r2,Math.floor((c1+c2)/2),m), _pt(r2,c1,m),
+      _pt(Math.floor((r1+r2)/2),c1,m),
+    ];
+    ctx.beginPath();
+    ctx.moveTo(corners[0].x, corners[0].y);
+    corners.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.closePath();
+    ctx.fillStyle = ZONE_FILL[zone] || 'rgba(255,255,255,.02)';
+    ctx.fill();
+    // Dashed border following polygon edges
+    ctx.strokeStyle = ZONE_EDGE[zone] || 'rgba(255,255,255,.05)';
+    ctx.lineWidth=0.7; ctx.setLineDash([3,6]);
+    ctx.stroke(); ctx.setLineDash([]);
+    // District name label at centroid
+    const cx = corners.reduce((s,p)=>s+p.x,0)/corners.length;
+    const cy = corners.reduce((s,p)=>s+p.y,0)/corners.length;
+    ctx.font=`700 ${Math.max(8,Math.min(12,m.cW*.7))}px 'Barlow Condensed','Space Mono',monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(180,210,240,0.16)';
+    ctx.fillText(name.toUpperCase(), cx, cy);
+  });
+
+  // 3. Local streets — jittered so they look organic, not grid
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  for(let r=0;r<GRID_ROWS;r++) {
+    for(let c=0;c<GRID_COLS;c++) {
+      const p=_pt(r,c,m);
+      // Horizontal street
+      if(c<GRID_COLS-1) {
+        const q=_pt(r,c+1,m);
+        ctx.strokeStyle='#0f1c2d'; ctx.lineWidth=2.5;
+        _curve(ctx,[p,q]);
+        // Kerb highlight
+        ctx.strokeStyle='rgba(30,55,80,0.6)'; ctx.lineWidth=0.5;
+        ctx.beginPath(); ctx.moveTo(p.x,p.y-1.5); ctx.lineTo(q.x,q.y-1.5); ctx.stroke();
+      }
+      // Vertical street
+      if(r<GRID_ROWS-1) {
+        const q=_pt(r+1,c,m);
+        ctx.strokeStyle='#0f1c2d'; ctx.lineWidth=2.5;
+        _curve(ctx,[p,q]);
+        ctx.strokeStyle='rgba(30,55,80,0.6)'; ctx.lineWidth=0.5;
+        ctx.beginPath(); ctx.moveTo(p.x-1.5,p.y); ctx.lineTo(q.x-1.5,q.y); ctx.stroke();
+      }
+    }
+  }
+
+  // 4. Arterial roads — smooth Catmull-Rom curves, much wider
+  ARTERIALS.forEach(waypoints=>{
+    const pts = waypoints.map(([r,c])=>_pt(r,c,m));
+    // Wide road bed
+    ctx.strokeStyle='#162235'; ctx.lineWidth=10; _curve(ctx,pts);
+    // Road surface
+    ctx.strokeStyle='#1a2d47'; ctx.lineWidth=7;  _curve(ctx,pts);
+    // Centre dashed divider
+    ctx.strokeStyle='rgba(255,180,0,0.15)'; ctx.lineWidth=0.9;
+    ctx.setLineDash([5,9]); _curve(ctx,pts); ctx.setLineDash([]);
+  });
+
+  // 5. Intersection dots
+  for(let r=0;r<GRID_ROWS;r++) for(let c=0;c<GRID_COLS;c++) {
+    const p=_pt(r,c,m);
+    ctx.fillStyle= (r%5===0&&c%5===0) ? '#1e3a55' : '#0d1e30';
+    ctx.beginPath(); ctx.arc(p.x,p.y,(r%5===0&&c%5===0)?3:1.8,0,Math.PI*2); ctx.fill();
+  }
+
+  // 6. Landmark pins — text label only, no emojis
+  LANDMARKS.forEach(([r,c,label])=>{
+    const p=_pt(r,c,m);
+    // Pin halo
+    const hg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,12);
+    hg.addColorStop(0,'rgba(0,220,255,0.18)'); hg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(p.x,p.y,12,0,Math.PI*2); ctx.fill();
+    // Small anchor dot
+    ctx.fillStyle='rgba(0,220,255,0.75)';
+    ctx.beginPath(); ctx.arc(p.x,p.y,2.5,0,Math.PI*2); ctx.fill();
+    // Label above pin
+    ctx.font='600 7px "Space Mono",monospace';
+    ctx.fillStyle='rgba(0,220,255,0.72)';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText(label.toUpperCase(), p.x, p.y-5);
+  });
+
+  // 7. Sparse coordinate labels on major junctions
+  ctx.font='6.5px "Space Mono",monospace'; ctx.fillStyle='rgba(40,60,80,0.9)';
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  for(let r=0;r<GRID_ROWS;r+=5) for(let c=0;c<GRID_COLS;c+=5) {
+    const p=_pt(r,c,m); ctx.fillText(`${r},${c}`,p.x+5,p.y+3);
+  }
+
+  // 8. Vignette
+  const vig=ctx.createRadialGradient(m.W/2,m.H/2,m.H*.25,m.W/2,m.H/2,m.H*.9);
+  vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,0.6)');
+  ctx.fillStyle=vig; ctx.fillRect(0,0,m.W,m.H);
+
+  _baseBuilt=true;
+}
+
+// Rebuild on resize
+let _rsTimer;
+window.addEventListener('resize',()=>{
+  clearTimeout(_rsTimer);
+  _rsTimer=setTimeout(()=>{
+    Object.keys(_JITTER).forEach(k=>delete _JITTER[k]); // regenerate jitter for new size
+    _baseBuilt=false; _buildBaseMap();
+    if(_lastMapData) renderCityMap(_lastMapData);
+  },200);
+});
+
+// ── startLiveMap: defer first draw to after layout ────────────────────────────
+function startLiveMap() {
+  requestAnimationFrame(()=>{
+    _buildBaseMap();
+    fetchAndRenderMap();
+    S.liveMapInt = setInterval(fetchAndRenderMap, 2000);
+  });
+}
+
+async function fetchAndRenderMap() {
+  try {
+    const r = await fetch(`${API}/api/v1/live-map`);
+    if (!r.ok) return;
+    const d = await r.json();
+    _lastMapData = d;
+    updateTopbarTickers(d);
+    updateOverviewPanel(d);
+    renderCityMap(d);
+    renderMapOverlays();
+    document.getElementById('sim-time').textContent = d.sim_time || '—';
+  } catch(e) { /* backend offline */ }
+}
+
+function updateTopbarTickers(d) {
+  const gh = d.grid_health || 100;
+  const wh = d.water_health || 100;
+  const emg = (d.active_incidents || []).length;
+  const gw  = (d.active_green_waves || []).length;
+
+  const gEl = document.getElementById('tk-grid-val');
+  gEl.textContent = gh.toFixed(1) + '%';
+  gEl.style.color = gh > 80 ? 'var(--green)' : gh > 60 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('tk-grid').className = 'ticker-dot ' + (gh > 80 ? 'dot-g' : gh > 60 ? 'dot-a' : 'dot-r');
+
+  document.getElementById('tk-water-val').textContent = wh.toFixed(1) + '%';
+  document.getElementById('tk-emg').textContent = emg;
+  document.getElementById('tk-emg-dot').className = 'ticker-dot ' + (emg > 0 ? 'dot-r' : 'dot-off');
+  document.getElementById('tk-gw').textContent = gw;
+  document.getElementById('tk-gw-dot').className = 'ticker-dot ' + (gw > 0 ? 'dot-g' : 'dot-off');
+}
+
+function updateOverviewPanel(d) {
+  const gh = d.grid_health || 100, wh = d.water_health || 100;
+  const emg = (d.active_incidents||[]).length, dens = d.avg_density || 0;
+  _set('ov-grid',    gh.toFixed(1)+'%');
+  _set('ov-water',   wh.toFixed(1)+'%');
+  _set('ov-emg',     emg);
+  _set('ov-density', dens.toFixed(3));
+  _bar2('ov-grid-bar', gh);
+  _bar2('ov-water-bar', wh);
+  _set('pwr-grid',  gh.toFixed(1)+'%');
+  _set('pwr-water', wh.toFixed(1)+'%');
+  // Event feed
+  const feed = (d.active_incidents||[]).slice(0,5);
+  const feedEl = document.getElementById('ov-feed');
+  if (!feed.length) { feedEl.innerHTML = '<div class="empty">No active incidents.</div>'; return; }
+  const typeColors = {
+    Crime_Weapon:'var(--red)', Accident:'var(--amber)', Fire_Smoke:'var(--red)',
+    Infra_GridBlackout:'var(--purple)', Infra_PipeBurst:'var(--cyan)', Crime_Theft:'var(--amber)',
+  };
+  feedEl.innerHTML = feed.map(i => {
+    const col = typeColors[i.type] || 'var(--txt3)';
+    return `<div class="feed-row">
+      <div class="feed-dot" style="background:${col}"></div>
+      <div class="feed-body">
+        <div class="feed-title">${(i.type||'').replace(/_/g,' ')}</div>
+        <div class="feed-meta">${i.incident_id} · SEV=${i.severity} · ${i.sim_time||''}</div>
+      </div>
+      <div class="feed-right"><span class="tag t-r">${i.severity}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderCityMap(d) {
+  const svg = document.getElementById('city-map');
+  const rect = svg.getBoundingClientRect();
+  const W = rect.width || 800, H = rect.height || 600;
+  S.mapW = W; S.mapH = H;
+
+  const padX = 20, padY = 20;
+  const cellW = (W - padX*2) / (GRID_COLS - 1);
+  const cellH = (H - padY*2) / (GRID_ROWS - 1);
+
+  if (!_svgBuilt) {
+    svg.innerHTML = '';
+    svg.style.background = 'transparent';  // canvas base shows through
+
+    const edgeGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+    edgeGroup.setAttribute('id','edge-group');
+    svg.appendChild(edgeGroup);
+
+    const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+    nodeGroup.setAttribute('id','node-group');
+    svg.appendChild(nodeGroup);
+
+    const incGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+    incGroup.setAttribute('id','inc-group');
+    svg.appendChild(incGroup);
+
+    const gwGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+    gwGroup.setAttribute('id','gw-group');
+    svg.appendChild(gwGroup);
+
+    // Build data overlay edges — invisible at rest, lit by density colours
+    for (let r = 0; r < GRID_ROWS; r++) {
+      for (let c = 0; c < GRID_COLS; c++) {
+        const m  = {PAD:padX, cW:cellW, cH:cellH};
+        const _j = _JITTER[`${r},${c}`] || {jx:0,jy:0};
+        const x1 = padX + c*cellW + _j.jx;
+        const y1 = padY + r*cellH + _j.jy;
+
+        if (c < GRID_COLS-1) {
+          const _j2 = _JITTER[`${r},${c+1}`] || {jx:0,jy:0};
+          const x2  = padX + (c+1)*cellW + _j2.jx;
+          const y2  = padY + r*cellH + _j2.jy;
+          const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+          line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+          line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+          line.setAttribute('stroke','none');       // invisible until density data arrives
+          line.setAttribute('stroke-width','3.5');
+          line.setAttribute('stroke-linecap','round');
+          line.setAttribute('id',`e-${r},${c}-${r},${c+1}`);
+          edgeGroup.appendChild(line);
+        }
+        if (r < GRID_ROWS-1) {
+          const _j2 = _JITTER[`${r+1},${c}`] || {jx:0,jy:0};
+          const x2  = padX + c*cellW + _j2.jx;
+          const y2  = padY + (r+1)*cellH + _j2.jy;
+          const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+          line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+          line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+          line.setAttribute('stroke','none');
+          line.setAttribute('stroke-width','3.5');
+          line.setAttribute('stroke-linecap','round');
+          line.setAttribute('id',`e-${r},${c}-${r+1},${c}`);
+          edgeGroup.appendChild(line);
+        }
+        // Signal dot — uses jittered position
+        const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        circle.setAttribute('cx',x1); circle.setAttribute('cy',y1);
+        circle.setAttribute('r','0');    // invisible at rest — lit by signal state
+        circle.setAttribute('id',`n-${r},${c}`);
+        nodeGroup.appendChild(circle);
+      }
+    }
+    _svgBuilt = true;
+  }
+
+  // Update edge colours from density data
+  const densities = d.edge_densities || {};
+  for (const [key, score] of Object.entries(densities)) {
+    const el = document.getElementById(`e-${key}`);
+    if (!el) continue;
+    const col = densityColor(score);
+    el.setAttribute('stroke', col);
+    if (!S.mapLayers.density || score === 0) {
+      el.setAttribute('opacity','0'); el.removeAttribute('filter');
+    } else {
+      el.setAttribute('opacity','0.92');
+      el.setAttribute('filter', score>=0.7?'url(#glow-r)':score>=0.3?'url(#glow-a)':'url(#glow-g)');
+      el.setAttribute('stroke-width', score>=0.7?'5':score>=0.3?'4':'3');
+    }
+  }
+  // Default colour for edges not in snapshot
+  // zero-density edges stay invisible — canvas base map already draws the road
+
+  // Update node signal colours
+  const signals = d.signal_states || {};
+  for (const [key, state] of Object.entries(signals)) {
+    const el = document.getElementById(`n-${key}`);
+    if (!el) continue;
+    if (!S.mapLayers.signals || state === 'OFF') {
+      el.setAttribute('r','0'); el.removeAttribute('filter'); continue;
+    }
+    const col = state==='GREEN'?'#00ff88':state==='RED'?'#ff3b5c':state==='YELLOW'?'#ffb800':'#334';
+    const flt = state==='GREEN'?'url(#glow-g)':state==='RED'?'url(#glow-r)':'url(#glow-a)';
+    const rad = state==='GREEN'?4:state==='RED'?3.5:3.5;
+    el.setAttribute('fill', col);
+    el.setAttribute('r', rad);
+    el.setAttribute('filter', flt);
+  }
+
+  // Green wave paths
+  const gwGroup = document.getElementById('gw-group');
+  gwGroup.innerHTML = '';
+  if (S.mapLayers.waves) {
+    (d.active_green_waves||[]).forEach(wave => {
+      const nodes = wave.path_nodes || [];
+      for (let i = 0; i < nodes.length-1; i++) {
+        const [r1,c1] = nodes[i], [r2,c2] = nodes[i+1];
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1', padX+c1*cellW); line.setAttribute('y1', padY+r1*cellH);
+        line.setAttribute('x2', padX+c2*cellW); line.setAttribute('y2', padY+r2*cellH);
+        line.setAttribute('stroke','var(--green)');
+        line.setAttribute('stroke-width','3');
+        line.setAttribute('opacity','.9');
+        gwGroup.appendChild(line);
+      }
+    });
+  }
+
+  // Incident markers
+  const incGroup = document.getElementById('inc-group');
+  incGroup.innerHTML = '';
+  if (S.mapLayers.incidents) {
+    (d.active_incidents||[]).forEach(inc => {
+      const node = inc.node;
+      if (!node || !Array.isArray(node)) return;
+      const [r,c] = node;
+      const x = padX + c * cellW, y = padY + r * cellH;
+      const sev   = inc.severity;
+      const color = sev === 'CRITICAL' ? 'var(--red)' : sev === 'HIGH' ? 'var(--amber)' : 'var(--cyan)';
+      const pulse = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      pulse.setAttribute('cx',x); pulse.setAttribute('cy',y);
+      pulse.setAttribute('r','8'); pulse.setAttribute('fill', color.replace('var(--red)','#ff3b5c').replace('var(--amber)','#ffb800').replace('var(--cyan)','#00e5ff'));
+      pulse.setAttribute('opacity','0.25');
+      incGroup.appendChild(pulse);
+      const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('cx',x); dot.setAttribute('cy',y);
+      dot.setAttribute('r','4');
+      dot.setAttribute('fill', color.replace('var(--red)','#ff3b5c').replace('var(--amber)','#ffb800').replace('var(--cyan)','#00e5ff'));
+      incGroup.appendChild(dot);
+    });
+  }
+}
+
+function renderMapOverlays() {
+  if (!_lastMapData) return;
+  const incs = _lastMapData.active_incidents || [];
+  const overlay = document.getElementById('map-inc-overlay');
+  const list    = document.getElementById('map-inc-list');
+  if (S.mapLayers.incidents && incs.length) {
+    overlay.classList.add('show');
+    const typeEmoji = { Crime_Weapon:'🔫', Accident:'🚗', Fire_Smoke:'🔥',
+                        Infra_GridBlackout:'⚡', Infra_PipeBurst:'💧', Crime_Theft:'🔓' };
+    list.innerHTML = incs.slice(0,5).map(i => {
+      const col = i.severity === 'CRITICAL' ? 'var(--red)' : 'var(--amber)';
+      return `<div class="ov-inc">
+        <div class="ov-inc-dot" style="background:${col}"></div>
+        <div class="ov-inc-body">
+          <strong>${typeEmoji[i.type]||'⚠'} ${(i.type||'').replace(/_/g,' ')}</strong>
+          ${i.incident_id} · ${i.severity}
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    overlay.classList.remove('show');
+  }
+}
+
+function densityColor(score) {
+  if (score >= 0.7)  return '#ff4020'; // neon red-orange jam
+  if (score >= 0.3)  return '#ffaa00'; // amber moderate
+  if (score > 0.0)   return '#00e5c0'; // cyan-green clear
+  return 'none';                        // zero traffic — let base show
+}
+
+// ─────────────────────────────────────────────────────
+// AI SENTINEL feed
+// ─────────────────────────────────────────────────────
+function startSentinel() {
+  fetchSentinel();
+  S.sentinelInt = setInterval(fetchSentinel, 3000);
+}
+
+async function fetchSentinel() {
+  try {
+    const r = await fetch(`${API}/api/v1/sentinel?limit=30`);
+    if (!r.ok) return;
+    const d = await r.json();
+    renderSentinel(d);
+  } catch {}
+}
+
+function renderSentinel(d) {
+  const incs  = d.active_incidents  || [];
+  const dets  = d.recent_detections || [];
+  const verif = d.verified_only     || [];
+
+  document.getElementById('sent-threats').textContent = incs.length;
+  document.getElementById('sent-alert-badge').textContent = `● ${incs.length} THREATS`;
+  document.getElementById('sent-inc-badge').textContent   = incs.length > 0 ? 'LIVE' : 'CLEAR';
+
+  const typeEmoji = { Crime_Weapon:'🔫', Accident:'🚗', Fire_Smoke:'🔥',
+                      Infra_GridBlackout:'⚡', Infra_PipeBurst:'💧', Crime_Theft:'🔓' };
+  const incEl = document.getElementById('sent-incidents');
+  if (!incs.length) {
+    incEl.innerHTML = '<div class="empty">No active incidents. City is clear.</div>';
+  } else {
+    incEl.innerHTML = incs.map(i => {
+      const sev = i.severity; const col = sev==='CRITICAL'?'var(--red)':sev==='HIGH'?'var(--amber)':'var(--cyan)';
+      return `<div style="display:flex;gap:10px;padding:10px;background:var(--bg3);border:1px solid var(--line);border-left:3px solid ${col};border-radius:var(--r);margin-bottom:6px">
+        <div style="font-size:18px;flex-shrink:0">${typeEmoji[i.type]||'⚠'}</div>
+        <div style="flex:1">
+          <div style="font-family:var(--cond);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--txt)">${(i.type||'').replace(/_/g,' ')}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:2px">${i.incident_id} · GPS(${i.gps?i.gps.lat.toFixed(4):0},${i.gps?i.gps.lon.toFixed(4):0}) · AUTH: ${i.authority||'—'}</div>
+          ${i.green_wave_id?`<div style="font-family:var(--mono);font-size:9px;color:var(--green);margin-top:2px">⚡ GW ${i.green_wave_id} dispatched</div>`:''}
+        </div>
+        <div><span class="tag ${sev==='CRITICAL'?'t-r':sev==='HIGH'?'t-a':'t-c'}">${sev}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  // CV fusion log
+  const logEl = document.getElementById('cv-fusion-log');
+  if (!dets.length) { logEl.innerHTML = '<div class="cv-line">No detections in window.</div>'; return; }
+  const modelColors = { 'CV-4':'#ff3b5c', 'CV-5':'#ffb800', 'CV-6':'#ffb800', 'CV-7':'#5a7a90', 'CV-8':'#5a7a90' };
+  logEl.innerHTML = dets.map(d => {
+    const col   = modelColors[d.model] || '#5a7a90';
+    const verif = d.sensor_corr;
+    return `<div class="cv-line ${verif?'verified':''}">
+      <span style="color:var(--cyan)">${d.tick.toString().padStart(6,' ')}</span>
+      <span style="color:${col};margin:0 6px">${d.model}</span>
+      <span style="color:var(--txt2)">[${d.node}]</span>
+      <span style="margin:0 6px">${d.class_name}</span>
+      <span style="color:var(--txt3)">conf=${d.confidence}</span>
+      ${verif?`<span style="color:var(--green);margin-left:6px">✓ VERIFIED</span>`:`<span style="color:var(--red);margin-left:6px">✗ UNCONFIRMED</span>`}
+    </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────────────
+// TRAFFIC / GREEN WAVE
+// ─────────────────────────────────────────────────────
+function startTraffic() {
+  fetchTraffic();
+  S.trafficInt = setInterval(fetchTraffic, 4000);
+}
+
+async function fetchTraffic() {
+  try {
+    const r = await fetch(`${API}/api/v1/traffic`);
+    if (!r.ok) return;
+    const d = await r.json();
+    renderTraffic(d);
+  } catch {}
+}
+
+function renderTraffic(d) {
+  const waves    = d.active_green_waves  || [];
+  const congest  = d.top_congested       || [];
+  const jamLog   = d.jam_relief_events   || [];
+  const density  = d.avg_density || 0;
+  const jammed   = congest.filter(c => c.density >= 0.7).length;
+
+  _set('gw-active-count', waves.length);
+  _set('gw-density',      density.toFixed(3));
+  _set('gw-jammed',       jammed);
+
+  if (jamLog.length > S.antijamTotal) {
+    S.antijamTotal = jamLog.length;
+  }
+  _set('gw-antijam', S.antijamTotal);
+
+  // Active wave list
+  const wEl = document.getElementById('gw-active-list');
+  if (!waves.length) {
+    wEl.innerHTML = '<div class="empty">No emergency corridors active. ML-1 running anti-jam loop.</div>';
+  } else {
+    wEl.innerHTML = waves.map(w => `
+      <div class="gw-card">
+        <div class="gw-id">${w.wave_id} · ${w.vehicle_type}</div>
+        <div class="gw-meta">Trigger: ${w.trigger} · ${w.signals_forced} signals forced GREEN · Path: ${w.path_length} nodes</div>
+      </div>`).join('');
+  }
+
+  // Top congested
+  const cEl = document.getElementById('gw-congested-list');
+  if (!congest.length) { cEl.innerHTML = '<div class="empty">No congestion data yet.</div>'; return; }
+  cEl.innerHTML = congest.map(c => {
+    const col = c.density >= 0.7 ? 'var(--red)' : c.density >= 0.3 ? 'var(--amber)' : 'var(--green)';
+    const pct = Math.round(c.density * 100);
+    return `<div style="margin-bottom:7px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--txt2)">[${c.segment[0]}]→[${c.segment[1]}]</span>
+        <span style="font-family:var(--mono);font-size:10px;color:${col}">${pct}%</span>
+      </div>
+      <div class="prog"><div class="prog-fill" style="background:${col};width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  // Jam relief log
+  const jEl = document.getElementById('gw-jam-log');
+  if (!jamLog.length) { jEl.innerHTML = '<div class="empty">ML-1 has not fired any relief events yet.</div>'; return; }
+  jEl.innerHTML = jamLog.slice(0,8).map(j => `
+    <div class="feed-row">
+      <div class="feed-dot" style="background:var(--amber)"></div>
+      <div class="feed-body">
+        <div class="feed-title">JAM RELIEF · ${j.action||''}</div>
+        <div class="feed-meta">Tick ${j.tick} · Segment ${JSON.stringify(j.segment)} · density=${(j.density_score||0).toFixed(3)} · alt_hops=${j.alt_hops}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ─────────────────────────────────────────────────────
+// LEDGER
+// ─────────────────────────────────────────────────────
+let _ledgerData = [];
+
+async function loadLedger() {
+  try {
+    const r = await fetch(`${API}/report/list?limit=20`);
+    if (!r.ok) return;
+    const d = await r.json();
+    _ledgerData = d.reports || [];
+    renderLedger();
+  } catch {}
+}
+
+function renderLedger() {
+  const rows = _ledgerData;
+  const now  = Date.now();
+
+  const visible = rows.filter(r => {
+    if ((r.work_status === 'DONE' || r.status === 'CLOSED') && r.closed_at) {
+      return (now - new Date(r.closed_at).getTime()) < 60000;
+    }
+    return true;
+  });
+
+  const breached = rows.filter(r => r.sla_breached).length;
+  const resolved = rows.filter(r => r.status === 'CLOSED').length;
+  const open     = visible.filter(r => r.status !== 'CLOSED' && r.status !== 'REJECTED').length;
+
+  _set('led-total',    rows.length);
+  _set('led-breached', breached);
+  _set('led-resolved', resolved);
+  _set('led-open',     open);
+  const breachBadge = document.getElementById('led-breach-badge');
+  if (breachBadge) breachBadge.textContent = `${breached} SLA BREACHED`;
+
+  const b = document.getElementById('ib-ledger-badge');
+  if (b) { b.textContent = open; b.style.display = open > 0 ? '' : 'none'; }
+
+  function wsColor(ws) {
+    if (!ws) return 'var(--txt3)';
+    ws = ws.toUpperCase();
+    if (ws==='DONE')        return 'var(--green)';
+    if (ws==='IN_PROGRESS') return 'var(--cyan)';
+    if (ws==='STARTED')     return 'var(--amber)';
+    if (ws==='REJECTED')    return 'var(--red)';
+    return 'var(--txt3)';
+  }
+  function wsLabel(ws) {
+    const map = {STARTED:'\u25b6 STARTED',IN_PROGRESS:'\u27f3 IN PROGRESS',DONE:'\u2713 DONE',
+                 REJECTED:'\u2717 REJECTED',OPEN:'\u23f3 OPEN',PENDING_REVIEW:'\u23f3 PENDING'};
+    return map[(ws||'').toUpperCase()] || ws || '\u2014';
+  }
+  function sevColor(sev) {
+    return {CRITICAL:'#ff2244',HIGH:'#ffaa00',MEDIUM:'#00c8ff',LOW:'#00ffb4'}[sev]||'var(--txt3)';
+  }
+
+  const html = visible.map(r => {
+    const ws = r.work_status || r.status || 'OPEN';
+    const filed = r.timestamp_utc ? new Date(r.timestamp_utc).toLocaleString() : '\u2014';
+    const auths = (r.authorities||[]);
+    return `<div style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);
+      ${ws==='DONE'?'opacity:.5;':''}
+      ${ws==='REJECTED'||r.verified===false?'background:rgba(255,42,74,.03);':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--cyan)">${r.ticket_id||'\u2014'}</span>
+          ${r.severity?`<span style="font-family:var(--mono);font-size:9px;color:${sevColor(r.severity)};background:rgba(0,0,0,.4);padding:1px 6px;border-radius:2px">\u25cf ${r.severity}</span>`:''}
+          ${r.green_wave?`<span style="font-family:var(--mono);font-size:9px;color:var(--green)">\ud83d\udea6 GW</span>`:''}
+          ${r.verified===false?`<span style="font-family:var(--mono);font-size:9px;color:var(--red)">\u274c FAKE</span>`:''}
+        </div>
+        <span style="font-family:var(--mono);font-size:9px;font-weight:700;color:${wsColor(ws)}">${wsLabel(ws)}</span>
+      </div>
+      <div style="font-size:11px;color:var(--txt);margin-bottom:4px;line-height:1.5">${r.ledger_summary||r.description||'\u2014'}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px">
+        ${auths.map(a=>`<span style="font-family:var(--mono);font-size:8px;color:var(--cyan);background:rgba(0,200,255,.08);padding:1px 6px;border-radius:2px">\ud83d\ude94 ${a}</span>`).join('')}
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);display:flex;gap:10px;flex-wrap:wrap">
+        <span>\ud83d\udccd Node ${JSON.stringify(r.grid_node||[])}</span>
+        <span>\ud83d\udccb ${r.category||'\u2014'}</span>
+        <span>SLA: ${r.sla_hours||'\u2014'}h</span>
+        <span>\ud83d\udd50 ${filed}</span>
+        ${r.sla_remaining?`<span style="color:${r.sla_breached?'var(--red)':'var(--txt3)'}">\u23f1 ${r.sla_remaining}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const fullEl = document.getElementById('led-full-list');
+  if (fullEl) fullEl.innerHTML = html || '<div class="empty">No reports yet.</div>';
+  const rpEl = document.getElementById('rp-led-list');
+  if (rpEl) rpEl.innerHTML = html ? html.slice(0, 3000) : '<div class="empty">No reports yet.</div>';
+}
+
+// ─────────────────────────────────────────────────────
+// REPORT SUBMISSION
+// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────
+// REPORT — photo preview
+// ─────────────────────────────────────────────────────
+function previewPhoto(n, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const prev = document.getElementById(`photo${n}-preview`);
+  const drop = document.getElementById(`photo${n}-drop`);
+  const reader = new FileReader();
+  reader.onload = e => {
+    prev.src = e.target.result;
+    prev.style.display = 'block';
+    drop.innerHTML = `<span style="font-size:14px">✅</span><span style="color:var(--green)">${file.name.substring(0,20)}</span>`;
+    drop.style.borderColor = 'var(--green)';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitReport() {
+  if (!S.citizen) return;
+  const cat    = document.getElementById('rep-cat').value;
+  const desc   = document.getElementById('rep-desc').value.trim();
+  const locVal = document.getElementById('rep-loc').value;
+  const p1     = document.getElementById('photo1-input').files[0];
+  const p2     = document.getElementById('photo2-input').files[0];
+  const btn    = document.getElementById('rep-btn');
+  const notice = document.getElementById('rep-notice');
+  const verDiv = document.getElementById('rep-verifying');
+  const formBody= document.getElementById('rep-form-body');
+  const verdictCard = document.getElementById('rep-verdict-card');
+
+  notice.className = 'notice';
+
+  if (!cat)    { notice.className='notice err show'; notice.textContent='Select a category.'; return; }
+  if (!desc)   { notice.className='notice err show'; notice.textContent='Describe the incident.'; return; }
+  if (!locVal) { notice.className='notice err show'; notice.textContent='Select your location sector.'; return; }
+  if (!p1)     { notice.className='notice err show'; notice.textContent='Upload Photo 1.'; return; }
+  if (!p2)     { notice.className='notice err show'; notice.textContent='Upload Photo 2.'; return; }
+
+  // Show verification animation
+  btn.disabled = true;
+  formBody.style.opacity = '0.3';
+  formBody.style.pointerEvents = 'none';
+  verdictCard.style.display = 'none';
+  verDiv.style.display = 'block';
+  const stepsEl = document.getElementById('rep-verify-steps');
+  stepsEl.innerHTML = '';  // clear previous steps on new submit
+
+  // Animate verification steps
+  const steps = [
+    '🔍 Scanning Photo 1…',
+    '🔍 Scanning Photo 2…',
+    '🧠 Analyzing incident authenticity…',
+    '⚖ Determining severity level…',
+    '📡 Consulting authority dispatcher…',
+    '🚦 Checking Green Wave requirements…',
+    '📋 Generating ledger entry…',
+  ];
+  let stepIdx = 0;
+  const stepInterval = setInterval(() => {
+    if (stepIdx < steps.length) {
+      stepsEl.innerHTML += `<div style="color:var(--cyan)">▶ ${steps[stepIdx]}</div>`;
+      stepIdx++;
+    }
+  }, 600);
+
+  const fd = new FormData();
+  fd.append('citizen_uid', S.citizen.citizen_uid);
+  fd.append('category',    cat);
+  fd.append('description', desc);
+  fd.append('grid_node',   locVal);
+  fd.append('photo1',      p1);
+  fd.append('photo2',      p2);
+
+  try {
+    const r = await fetch(`${API}/report/submit`, { method: 'POST', body: fd });
+    const d = await r.json();
+
+    clearInterval(stepInterval);
+    verDiv.style.display = 'none';
+    formBody.style.opacity = '1';
+    formBody.style.pointerEvents = 'auto';
+
+    // Show verdict card
+    verdictCard.style.display = 'block';
+    const vh = document.getElementById('rep-verdict-header');
+    const vb = document.getElementById('rep-verdict-body');
+
+    if (!r.ok) {
+      vh.style.background = 'rgba(255,42,74,.15)';
+      vh.style.color = 'var(--red)';
+      vh.textContent = '❌ SUBMISSION ERROR';
+      vb.innerHTML = `<span style="color:var(--red)">${d.detail || 'Submission failed.'}</span>`;
+    } else if (d.verified) {
+      // ✅ VERIFIED
+      const sevColor = {CRITICAL:'#ff2244',HIGH:'#ffaa00',MEDIUM:'#00c8ff',LOW:'#00ffb4'}[d.severity]||'#00ffb4';
+      vh.style.background = `rgba(0,255,180,.08)`;
+      vh.style.borderBottom = '1px solid rgba(0,255,180,.2)';
+      vh.innerHTML = `<span style="color:var(--green)">✅ REPORT VERIFIED</span>
+        <span style="margin-left:10px;color:${sevColor};font-size:9px">● ${d.severity}</span>
+        <span style="margin-left:8px;color:var(--txt3);font-size:9px">${(d.ai_confidence*100).toFixed(0)}% confidence</span>`;
+      vb.innerHTML = `
+        <div style="margin-bottom:8px;color:var(--txt);line-height:1.6">${d.ledger_summary}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          ${(d.authorities||[]).map(a=>`<span style="background:rgba(0,200,255,.1);border:1px solid rgba(0,200,255,.3);color:var(--cyan);padding:2px 8px;border-radius:3px;font-family:var(--mono);font-size:9px">🚔 ${a}</span>`).join('')}
+          ${d.green_wave?`<span style="background:rgba(0,255,180,.1);border:1px solid rgba(0,255,180,.3);color:var(--green);padding:2px 8px;border-radius:3px;font-family:var(--mono);font-size:9px">🚦 GREEN WAVE ACTIVE</span>`:''}
+        </div>
+        <div style="font-family:var(--mono);font-size:10px">
+          <span style="color:var(--green)">+${d.karma_delta} KARMA</span>
+          <span style="color:var(--txt3);margin-left:10px">${d.karma_reason}</span>
+        </div>
+        <div style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--txt3)">
+          Ticket: ${d.ticket_id} · Status: ${d.work_status} · SLA: ${d.sla_hours}h
+        </div>`;
+      notice.className='notice ok show';
+      notice.textContent = `✓ Ticket ${d.ticket_id} filed. Karma: ${d.karma_delta > 0 ? '+' : ''}${d.karma_delta}`;
+
+      // Reset form
+      document.getElementById('rep-cat').value = '';
+      document.getElementById('rep-desc').value = '';
+      document.getElementById('rep-loc').value = '';
+      document.getElementById('photo1-input').value = '';
+      document.getElementById('photo2-input').value = '';
+      document.getElementById('photo1-preview').style.display = 'none';
+      document.getElementById('photo2-preview').style.display = 'none';
+      ['photo1-drop','photo2-drop'].forEach(id => {
+        const el = document.getElementById(id);
+        el.innerHTML = '<span style="font-size:18px">📷</span><span>Click to upload</span>';
+        el.style.borderColor = 'rgba(255,255,255,.2)';
+      });
+
+      loadLedger();
+      loadMyReports();
+      // Refresh karma
+      if (S.citizen) fetchAndPopulateProfile(S.citizen.citizen_uid);
+
+    } else {
+      // ❌ REJECTED / FAKE
+      vh.style.background = 'rgba(255,42,74,.1)';
+      vh.style.borderBottom = '1px solid rgba(255,42,74,.2)';
+      vh.innerHTML = `<span style="color:var(--red)">❌ REPORT REJECTED — FAKE DETECTED</span>
+        <span style="margin-left:10px;color:var(--txt3);font-size:9px">${(d.ai_confidence*100).toFixed(0)}% confidence</span>`;
+      vb.innerHTML = `
+        <div style="color:var(--red);margin-bottom:6px">⚠ ${d.fake_reason || 'Photos do not match the claimed incident.'}</div>
+        <div style="font-family:var(--mono);font-size:10px">
+          <span style="color:var(--red)">${d.karma_delta} KARMA PENALTY</span>
+          <span style="color:var(--txt3);margin-left:10px">${d.karma_reason}</span>
+        </div>`;
+      notice.className='notice err show';
+      notice.textContent = `❌ Rejected. Karma: ${d.karma_delta}`;
+      if (S.citizen) fetchAndPopulateProfile(S.citizen.citizen_uid);
+    }
+
+  } catch(e) {
+    clearInterval(stepInterval);
+    verDiv.style.display = 'none';
+    formBody.style.opacity = '1';
+    formBody.style.pointerEvents = 'auto';
+    notice.className='notice err show';
+    notice.textContent = `Network error: ${e.message}`;
+  }
+
+  btn.disabled = false;
+}
+
+async function loadMyReports() {
+  if (!S.citizen) return;
+  const el = document.getElementById('rep-my-reports');
+  try {
+    const r = await fetch(`${API}/report/my/${S.citizen.citizen_uid}?limit=20`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    const mine = d.reports || [];
+    if (!mine.length) { el.innerHTML = '<div class="empty">None yet.</div>'; return; }
+    el.innerHTML = mine.map(rpt => {
+      const verified = rpt.verified;
+      const ws = rpt.work_status || rpt.status || 'OPEN';
+      const wsColor = ws==='DONE'?'var(--green)':ws==='IN_PROGRESS'?'var(--cyan)':ws==='REJECTED'?'var(--red)':'var(--amber)';
+      const filed = rpt.timestamp_utc ? new Date(rpt.timestamp_utc).toLocaleString() : '—';
+      const sevColor = {CRITICAL:'#ff2244',HIGH:'#ffaa00',MEDIUM:'#00c8ff',LOW:'#00ffb4'}[rpt.severity]||'var(--txt3)';
+      return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-family:var(--mono);color:var(--cyan);font-size:9px">${rpt.ticket_id}</span>
+          <span style="font-family:var(--mono);color:${wsColor};font-size:9px">● ${ws}</span>
+        </div>
+        <div style="color:var(--txt);margin-bottom:3px;line-height:1.4">${rpt.ledger_summary||rpt.description||'—'}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-family:var(--mono);font-size:9px;color:var(--txt3)">
+          <span style="color:${sevColor}">● ${rpt.severity||'—'}</span>
+          <span>${rpt.category||'—'}</span>
+          <span>${(rpt.authorities||[]).join(', ')||'—'}</span>
+          <span>${verified?'<span style="color:var(--green)">✅ VERIFIED</span>':'<span style="color:var(--red)">❌ REJECTED</span>'}</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--txt3);margin-top:3px">
+          SLA: ${rpt.sla_hours||'—'}h · ${rpt.sla_remaining||'—'} · ${filed}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    if (el) el.innerHTML = `<div class="empty" style="color:var(--red)">Failed to load: ${e.message}</div>`;
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────
+// CHHAYA — AI-1 Trust check + AI-2 live danger loop
+// ─────────────────────────────────────────────────────
+
+// Shared function: apply a danger telemetry result to the dashboard UI.
+// Called both from walker's BroadcastChannel AND from dashboard's own poll.
+function _applyDangerUpdate(d, curNode, logLines, log) {
+  const dl = d.danger_level || 0;
+  const dangerBar = document.getElementById('ch-danger-bar');
+  const dangerNum = document.getElementById('ch-danger-num');
+  const alertMsg  = document.getElementById('ch-alert-msg');
+  const actionEl  = document.getElementById('ch-action');
+  const stalkerEl = document.getElementById('ch-stalker');
+  const patrolTag = document.getElementById('ch-patrol-tag');
+  const ai2Tag    = document.getElementById('ch-ai2-tag');
+
+  const dangerCol = dl > 60 ? 'var(--red)' : dl >= 30 ? 'var(--amber)' : 'var(--green)';
+  if (dangerBar) { dangerBar.style.width = dl + '%'; dangerBar.style.background = dangerCol; }
+  if (dangerNum) { dangerNum.textContent = dl; dangerNum.style.color = dangerCol; }
+  if (alertMsg)  {
+    alertMsg.textContent = d.alert_message || '✓ Route clear.';
+    alertMsg.style.borderLeftColor = dangerCol;
+    alertMsg.style.color = dl > 60 ? 'var(--red)' : dl >= 30 ? 'var(--amber)' : 'var(--txt2)';
+  }
+  if (actionEl)  actionEl.textContent = (d.recommended_action||'continue').replace(/_/g,' ').toUpperCase();
+  if (stalkerEl) {
+    stalkerEl.textContent = d.stalker_id || 'NONE';
+    stalkerEl.style.color = d.stalker_id ? 'var(--red)' : 'var(--txt3)';
+  }
+  if (ai2Tag) { ai2Tag.textContent = 'ACTIVE'; ai2Tag.className = 'tag t-g'; }
+
+  if (d.recommended_action === 'alert_police') {
+    const card = document.getElementById('chhaya-card');
+    if (card) card.style.borderColor = 'var(--red)';
+    if (patrolTag) { patrolTag.textContent = 'DISPATCHED'; patrolTag.className = 'tag t-r'; }
+    const node = d.node || curNode || [0,0];
+    logLines.push(`<span style="color:var(--red);font-weight:700">⚠ THREAT! Patrol dispatched to [${Array.isArray(node)?node[0]+','+node[1]:'?'}] — Stalker: ${d.stalker_id||'UNKNOWN'}</span>`);
+  } else if (d.recommended_action === 'reroute') {
+    logLines.push(`<span style="color:var(--amber)">${_simTime()} ⚡ Suspicious proximity — rerouting</span>`);
+  }
+
+  S.chhayaLastDanger = dl;
+  S._lastDangerTs    = Date.now();   // timestamp so poll knows data is fresh
+  if (logLines.length > 10) logLines.shift();
+  if (log) log.innerHTML = logLines.join('<br/>');
+}
+
+async function _sendChhayaTelemetry(node, logLines, log) {
+  if (!S.citizen || !S.chhayaActive) return;
+  // ── If walker sent a DANGER_UPDATE recently (within 3 s), skip own poll ──
+  // This prevents dashboard from overwriting walker's more-accurate data
+  // with its own random-noise telemetry.
+  if (S._lastDangerTs && (Date.now() - S._lastDangerTs) < 3000) return;
+
+  try {
+    // Build nearby tracks from live sim sentinel data (simulate proximity)
+    const nearby = [];
+    for (let i = 0; i < Math.floor(Math.random() * 4); i++) {
+      nearby.push({
+        id: `P${Math.floor(Math.random()*999).toString().padStart(3,'0')}`,
+        distance: parseFloat((Math.random() * 30 + 1).toFixed(1)),
+        angle: parseFloat((Math.random() * 180).toFixed(1)),
+      });
+    }
+    const fd = new FormData();
+    fd.append('citizen_uid',   S.citizen.citizen_uid);
+    fd.append('node_row',      node[0]);
+    fd.append('node_col',      node[1]);
+    fd.append('risk_zone',     (0.1 + Math.random() * 0.6).toFixed(2));
+    fd.append('sim_time',      _simTime() || '22:00');
+    fd.append('path_progress', (0.1 + Math.random() * 0.8).toFixed(2));
+    fd.append('nearby_ids',    JSON.stringify(nearby));
+
+    const r  = await fetch(`${API}/chhaya/telemetry`, { method: 'POST', body: fd });
+    const d  = await r.json();
+    _applyDangerUpdate(d, node, logLines, log);
+
+  } catch(e) { console.warn('Chhaya telemetry error:', e); }
+}
+
+async function loadChhayaTrustScore() {
+  if (!S.citizen) return;
+  try {
+    const r = await fetch(`${API}/citizen/trust-score/${S.citizen.citizen_uid}`);
+    if (!r.ok) return;
+    const d = await r.json();
+    const ts = d.trust_score || 50;
+    const penColor = {none:'var(--green)',warn:'var(--amber)',restrict:'var(--red)',ban:'var(--red)'}[d.penalty]||'var(--cyan)';
+    _set('ch-trust-score', `${ts}/100`);
+    document.getElementById('ch-trust-bar').style.width = ts + '%';
+    document.getElementById('ch-trust-bar').style.background = penColor;
+    document.getElementById('ch-trust-score').style.color = penColor;
+    _set('ch-trust-penalty', `TIER: ${(d.penalty||'—').toUpperCase()}`);
+    _set('ch-fraud-prob', `FRAUD RISK: ${Math.round((d.fraud_probability||0)*100)}%`);
+  } catch(e) { console.warn('Trust score fetch:', e); }
+}
+
+
+async function toggleChhaya() {
+  if (!S.citizen) return;
+  const activate = !S.chhayaActive;
+  const sw    = document.getElementById('chhaya-sw');
+  const lbl   = document.getElementById('chhaya-lbl');
+  const card  = document.getElementById('chhaya-card');
+  const title = document.getElementById('chhaya-title');
+  const sub   = document.getElementById('chhaya-sub');
+  const badge = document.getElementById('chhaya-global-badge');
+  const idSt  = document.getElementById('ch-id-status');
+  const log   = document.getElementById('ch-log');
+  const ghostSt = document.getElementById('ghost-id-status');
+  const ai2Tag  = document.getElementById('ch-ai2-tag');
+
+  title.textContent = activate ? 'AI-1 trust check…' : 'Deactivating…';
+
+  const fd = new FormData();
+  fd.append('citizen_uid', S.citizen.citizen_uid);
+  fd.append('activate',    activate);
+
+  try {
+    const r = await fetch(`${API}/chhaya/toggle`, { method: 'POST', body: fd });
+    const d = await r.json();
+
+    // Blocked by AI-1 trust gate
+    if (d.status === 'BLOCKED') {
+      title.textContent = '⛔ Escort Denied';
+      sub.textContent   = d.message;
+      log.innerHTML     = `<span style="color:var(--red)">AI-1 BLOCKED: Trust score ${d.trust_score}/100 — ${d.message}</span>`;
+      setTimeout(() => { title.textContent = 'Safety Escort — Inactive'; sub.textContent = 'Activate Chhaya to let the city grid track you safely as you walk.'; }, 4000);
+      return;
+    }
+
+    S.chhayaActive = d.active;
+    sw.classList.toggle('on', d.active);
+    card.classList.toggle('active', d.active);
+    card.style.borderColor = '';
+
+    const node = Array.isArray(d.grid_node) ? d.grid_node : [0, 0];
+    document.getElementById('ch-node').textContent = `[${node[0]}, ${node[1]}]`;
+
+    // Show AI-1 trust score
+    if (d.trust_score !== undefined) {
+      const ts = d.trust_score;
+      const pc = {none:'var(--green)',warn:'var(--amber)',restrict:'var(--red)',ban:'var(--red)'}[d.trust_penalty]||'var(--cyan)';
+      _set('ch-trust-score', `${ts}/100`);
+      document.getElementById('ch-trust-bar').style.width = ts + '%';
+      document.getElementById('ch-trust-bar').style.background = pc;
+      document.getElementById('ch-trust-score').style.color = pc;
+      _set('ch-trust-penalty', `TIER: ${(d.trust_penalty||'—').toUpperCase()}`);
+      _set('ch-fraud-prob', `FRAUD RISK: ${Math.round((d.fraud_prob||0)*100)}%`);
+    }
+
+    if (d.active) {
+      S.chhayaStart    = Date.now();
+      S.chhayaHandoffs = 0;
+      S.chhayaLastDanger = 0;
+      title.textContent = 'Safety Escort — ACTIVE';
+      sub.textContent   = `AI-2 danger detection live. Trust: ${d.trust_score}/100. Nearest patrol armed.`;
+      lbl.textContent   = 'Deactivate';
+      badge.textContent = 'ESCORT ACTIVE';
+      badge.style.cssText = 'font-size:10px;padding:5px 12px;background:var(--greenM);color:var(--green);border:1px solid rgba(0,255,136,.3)';
+      idSt.textContent  = 'LINKED'; idSt.className = 'tag t-c';
+      if (ghostSt) { ghostSt.textContent = 'LINKED'; ghostSt.className = 'tag t-c'; }
+      if (ai2Tag)  { ai2Tag.textContent = 'ACTIVE'; ai2Tag.className = 'tag t-g'; }
+      document.getElementById('ch-handoffs').textContent = '0';
+
+      let logLines = [
+        `<span style="color:var(--cyan)">${_simTime()}</span> Escort activated — AI-1 trust: ${d.trust_score}/100`,
+        `<span style="color:var(--cyan)">${_simTime()}</span> Node [${node[0]},${node[1]}] acquired`,
+        `<span style="color:var(--green)">Ghost Protocol active — identity linked</span>`,
+        `<span style="color:var(--green)">AI-2 Chhaya Tracker — ONLINE</span>`,
+      ];
+      log.innerHTML = logLines.join('<br/>');
+
+      let curNode = [...node];
+      clearInterval(S.chhayaTimer);
+
+      // ── Listen for player movement from Citizen Walker window ─────────────
+      // Node ONLY changes when the player actually moves — no random drift.
+      if (S._walkerChannel) { try { S._walkerChannel.close(); } catch(e){} }
+      try {
+        S._walkerChannel = new BroadcastChannel('omni_walker');
+        S._walkerChannel.onmessage = (ev) => {
+          if (ev.data && ev.data.type === 'MOVE') {
+            curNode = [...ev.data.node];
+            document.getElementById('ch-node').textContent = `[${curNode[0]}, ${curNode[1]}]`;
+            S.chhayaHandoffs++;
+            document.getElementById('ch-handoffs').textContent = S.chhayaHandoffs;
+            logLines.push(`<span style="color:var(--txt3)">${_simTime()}</span> Handoff → CAM-${Math.floor(Math.random()*200+10).toString().padStart(3,'0')} [${curNode[0]},${curNode[1]}]`);
+            if (logLines.length > 10) logLines.shift();
+            log.innerHTML = logLines.join('<br/>');
+          }
+        };
+      } catch(e) { console.warn('BroadcastChannel unavailable:', e); }
+
+      // ── Listen for DANGER_UPDATE broadcast from Citizen Walker ───────────
+      // Walker is the source of truth: it has the real position, real density.
+      // When walker fires telemetry it broadcasts the result here — we apply
+      // it directly so both panels stay in perfect sync.
+      if (S._chhayaChannel) { try { S._chhayaChannel.close(); } catch(e){} }
+      try {
+        S._chhayaChannel = new BroadcastChannel('omni_chhaya');
+        S._chhayaChannel.onmessage = (ev) => {
+          if (!ev.data) return;
+          if (ev.data.type === 'DANGER_UPDATE') {
+            // Apply walker's telemetry result directly to dashboard panel
+            _applyDangerUpdate(ev.data, curNode, logLines, log);
+          }
+          if (ev.data.type === 'CHHAYA_STATE') {
+            // Walker toggled Chhaya on/off
+            if (!ev.data.active && S.chhayaActive) {
+              // Walker deactivated — reflect on dashboard
+              S.chhayaLastDanger = 0;
+            }
+          }
+        };
+      } catch(e) { console.warn('Chhaya sync channel unavailable:', e); }
+
+      // ── Telemetry fires every 4 s at current (player-set) node ──────────
+      S.chhayaTimer = setInterval(async () => {
+        // Also sync from localStorage as a fallback
+        try {
+          const stored = localStorage.getItem('omni_walker_node');
+          if (stored) {
+            const p = JSON.parse(stored);
+            if (Array.isArray(p) && p.length === 2) curNode = p;
+          }
+        } catch(e) {}
+
+        document.getElementById('ch-node').textContent = `[${curNode[0]}, ${curNode[1]}]`;
+        const secs = Math.floor((Date.now() - S.chhayaStart) / 1000);
+        document.getElementById('ch-duration').textContent =
+          `${String(Math.floor(secs / 60)).padStart(2,'0')}:${String(secs % 60).padStart(2,'0')}`;
+
+        await _sendChhayaTelemetry(curNode, logLines, log);
+
+      }, 4000);
+
+    } else {
+      clearInterval(S.chhayaTimer);
+      if (S._chhayaChannel) { try { S._chhayaChannel.close(); } catch(e){} S._chhayaChannel = null; }
+      S._lastDangerTs = 0;
+      title.textContent = 'Safety Escort — Inactive';
+      sub.textContent   = 'Activate Chhaya to let the city grid track you safely as you walk.';
+      lbl.textContent   = 'Activate Escort';
+      badge.textContent = 'STANDBY';
+      badge.style.cssText = 'font-size:10px;padding:5px 12px;background:var(--cyanD);color:var(--cyan);border:1px solid var(--cyanB)';
+      idSt.textContent = 'UNLINKED'; idSt.className = 'tag t-off';
+      if (ghostSt) { ghostSt.textContent = 'UNLINKED'; ghostSt.className = 'tag t-off'; }
+      if (ai2Tag)  { ai2Tag.textContent = 'OFFLINE'; ai2Tag.className = 'tag t-off'; }
+      document.getElementById('ch-node').textContent     = '—';
+      document.getElementById('ch-handoffs').textContent = '—';
+      document.getElementById('ch-duration').textContent = '—';
+      // Reset danger meter
+      const db = document.getElementById('ch-danger-bar');
+      const dn = document.getElementById('ch-danger-num');
+      if (db) { db.style.width='0%'; db.style.background='var(--green)'; }
+      if (dn) { dn.textContent='0'; dn.style.color='var(--green)'; }
+      _set('ch-action','—'); _set('ch-stalker','NONE');
+      log.innerHTML = 'Escort terminated.';
+    }
+  } catch(e) {
+    title.textContent = `Error: ${e.message}`;
+    console.error('Chhaya toggle error:', e);
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// KARMA
+// ─────────────────────────────────────────────────────
+function populateKarma(ks, name, uid) {
+  // ── Normalise: legacy scores were 0–3, new scale is 0–100 ─────────────────
+  if (ks <= 3.0) ks = Math.round(ks * (100 / 3) * 10) / 10;
+  ks = Math.max(0, Math.min(100, ks));
+
+  const pct  = ks;                         // ks IS already a percentage
+  const circ = 238.8;
+  const offset = circ - (pct / 100) * circ;
+
+  ['karma-ring-arc','karma-ov-arc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.setAttribute('stroke-dashoffset', offset.toFixed(1));
+    // Arc colour: green ≥70, amber 20–70, red <20
+    const col = ks>=70?'var(--green)':ks>=20?'var(--amber)':'var(--red)';
+    el.setAttribute('stroke', col);
+  });
+
+  _set('karma-ring-val', ks.toFixed(0));
+  _set('karma-ov-val',   ks.toFixed(0));
+
+  const tier  = ks>=70 ? 'GOOD CITIZEN' : ks>=20 ? 'NORMAL CITIZEN' : 'BAD CITIZEN';
+  const tCol  = ks>=70 ? 'var(--green)' : ks>=20 ? 'var(--amber)'   : 'var(--red)';
+
+  ['k-name','karma-ov-name'].forEach(id => _set(id, name||'—'));
+  ['k-uid', 'karma-ov-uid'].forEach(id => _set(id, (uid||'—').slice(0,14)+'…'));
+  ['k-tier','karma-ov-tier'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = tier; el.style.color = tCol; }
+  });
+}
+
+// ─────────────────────────────────────────────────────
+// CITIZEN PROFILE — full data from backend
+// ─────────────────────────────────────────────────────
+async function fetchAndPopulateProfile(citizen_uid) {
+  if (!citizen_uid) return;
+  try {
+    const r = await fetch(`${API}/citizen/profile/${citizen_uid}`);
+    if (!r.ok) return;
+    const p = await r.json();
+    populateProfileCard(p);
+    if (p.stats) {
+      const st = p.stats;
+      // Progress bars — all on 0–100 scale
+      _setBar('karma-bar-verified', st.karma_verified, 50,  'var(--cyan)');
+      _setBar('karma-bar-reports',  st.karma_reports,  40,  'var(--green)');
+      _setBar('karma-bar-chhaya',   st.karma_chhaya,   20,  'var(--cyan)');
+      _setBar('karma-bar-penalty',  st.karma_penalty,  50,  'var(--red)');
+      _set('karma-num-verified', '+' + st.karma_verified);
+      _set('karma-num-reports',  '+' + st.karma_reports);
+      _set('karma-num-chhaya',   '+' + st.karma_chhaya);
+      _set('karma-num-penalty',  '-' + st.karma_penalty);
+      _set('karma-rewards-count', st.rewards_unlocked);
+      // Re-render facilities and event log
+      _renderFacilities(st.facilities || []);
+      _renderKarmaEvents(st.recent_events || []);
+    }
+  } catch(e) { console.warn('Profile fetch:', e); }
+}
+
+function _setBar(id, val, max, col) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.width = Math.round((val / max) * 100) + '%';
+  el.style.background = col;
+}
+
+// ── Facilities unlock display ────────────────────────────────────────────────
+function _renderFacilities(facilities) {
+  const el = document.getElementById('karma-facilities');
+  if (!el) return;
+  if (!facilities.length) { el.innerHTML='<div class="empty">No data.</div>'; return; }
+  el.innerHTML = facilities.map(f => `
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bg4)">
+      <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;
+                  background:${f.unlocked?'var(--green)':'var(--bg4)'};
+                  box-shadow:${f.unlocked?'0 0 6px var(--green)':'none'}"></div>
+      <div style="flex:1;font-family:var(--mono);font-size:10px;
+                  color:${f.unlocked?'var(--txt)':'var(--txt3)'}">
+        ${f.name}
+        <span style="font-size:9px;color:var(--txt3);display:block">${f.desc}</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;
+                  color:${f.unlocked?'var(--green)':'var(--txt3)'}">
+        ${f.unlocked?'UNLOCKED':'LOCKED'}
+      </div>
+    </div>`).join('');
+}
+
+// ── Karma event log display ───────────────────────────────────────────────────
+function _renderKarmaEvents(events) {
+  const el = document.getElementById('karma-event-log');
+  if (!el) return;
+  if (!events.length) { el.innerHTML='<div class="empty">No karma events yet.</div>'; return; }
+  el.innerHTML = events.map(e => {
+    const pos  = e.delta >= 0;
+    const col  = pos ? 'var(--green)' : 'var(--red)';
+    const sign = pos ? '+' : '';
+    const dt   = new Date(e.created_at).toLocaleString('en-IN',{hour12:false,
+                   month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const src  = e.source === 'CITIZEN_REPORT' ? '👤 Citizen' :
+                 e.source === 'CCTV'            ? '📷 CCTV'   :
+                 e.source === 'ADMIN'           ? '🛡 Admin'   : '⚙ System';
+    return `<div style="display:flex;align-items:flex-start;gap:8px;
+                        padding:6px 0;border-bottom:1px solid var(--bg4)">
+      <div style="min-width:36px;font-family:var(--mono);font-size:12px;
+                  font-weight:900;color:${col};text-align:right">${sign}${e.delta}</div>
+      <div style="flex:1;font-family:var(--mono);font-size:10px">
+        <div style="color:var(--txt)">${e.event_type.replace(/_/g,' ')}</div>
+        <div style="color:var(--txt3);font-size:9px">${src} · ${dt}</div>
+        ${e.description && e.description !== e.event_type
+          ? `<div style="color:var(--txt2);font-size:9px;margin-top:1px">${e.description}</div>` : ''}
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--txt3);
+                  white-space:nowrap">→ ${e.score_after}</div>
+    </div>`;
+  }).join('');
+}
+
+function populateProfileCard(p) {
+  _set('top-name', p.name || '—');
+  _set('top-uid',  (p.citizen_uid||'').slice(0,10)+'…');
+  ['k-name','karma-ov-name'].forEach(id => _set(id, p.name||'—'));
+  ['k-uid', 'karma-ov-uid'].forEach(id => _set(id, p.citizen_uid||'—'));
+
+  const card = document.getElementById('profile-card');
+  if (!card) return;
+
+  const node = (() => { try { return JSON.parse(p.grid_node); } catch(e) { return [0,0]; } })();
+  const ks = p.stats ? p.stats.karma_score : 1.0;
+  const hasVehicle = p.vehicle && p.vehicle.plate;
+
+  card.innerHTML = `
+    <div class="prof-header">
+      <div class="prof-face-wrap">
+        <div class="prof-cv2-tl"></div><div class="prof-cv2-tr"></div>
+        <div class="prof-cv2-bl"></div><div class="prof-cv2-br"></div>
+        <img class="prof-face"
+          src="${p.face_url ? API + p.face_url : ''}"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+          alt="face"/>
+        <div class="prof-face-ph">👤</div>
+        <div class="prof-cv2-badge">CV2 ✓</div>
+      </div>
+      <div class="prof-id">
+        <div class="prof-name">${p.name || '—'}</div>
+        <div class="prof-uid">${p.citizen_uid || '—'}</div>
+        <div class="prof-node-chip">
+          <span class="prof-node-dot"></span>Node [${node[0]}, ${node[1]}]
+        </div>
+        <div class="prof-karma-pill" style="background:${ks>=70?'rgba(0,255,136,.07)':ks>=20?'rgba(255,184,0,.07)':'rgba(255,59,92,.07)'};border-color:${ks>=70?'rgba(0,255,136,.2)':ks>=20?'rgba(255,184,0,.2)':'rgba(255,59,92,.2)'}">
+          <div class="prof-karma-dot" style="background:${ks>=70?'var(--green)':ks>=20?'var(--amber)':'var(--red)'}"></div>
+          Karma&nbsp;<b>${ks.toFixed(0)}</b>/100
+          &nbsp;·&nbsp;
+          <span style="color:${ks>=70?'var(--green)':ks>=20?'var(--amber)':'var(--red)'}">${p.stats ? p.stats.karma_tier : 'NORMAL CITIZEN'}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="prof-two-col">
+      <div class="prof-section">
+        <div class="prof-section-label">Personal Info</div>
+        ${profRow('Full Name',   p.name)}
+        ${profRow('Age',         p.age)}
+        ${profRow('Gender',      p.gender)}
+        ${profRow('Date of Birth', p.dob)}
+        ${profRow('Aadhaar No.', p.aadhaar_last4 || '●●●● ●●●● ████')}
+        ${profRow('Address',     p.address)}
+      </div>
+      <div class="prof-section">
+        <div class="prof-section-label">Civic Standing</div>
+        ${profRow('Grid Node',      '[' + node[0] + ', ' + node[1] + ']')}
+        ${profRow('Karma Score',    ks.toFixed(0) + ' / 100')}
+        ${profRow('Citizen Status', p.stats ? p.stats.karma_tier : 'NORMAL CITIZEN')}
+        ${profRow('Reports Filed',  p.stats ? p.stats.reports_total : 0)}
+        ${profRow('False Reports',  p.stats ? p.stats.fake_reports : 0)}
+        ${profRow('Facilities',     (p.stats ? p.stats.rewards_unlocked : 0) + ' unlocked')}
+      </div>
+    </div>
+
+    <div class="prof-section" style="margin-top:12px">
+      <div class="prof-section-label" style="display:flex;align-items:center;gap:8px">
+        Registered Vehicle
+        ${hasVehicle
+          ? '<span class="tag t-g">LINKED</span>'
+          : '<span class="tag t-a">NONE</span>'}
+      </div>
+      ${hasVehicle ? `
+        <div class="prof-two-col" style="margin-top:8px">
+          <div>
+            ${profRow('Plate No.', p.vehicle.plate)}
+            ${profRow('Model',     p.vehicle.model)}
+          </div>
+          <div>
+            ${profRow('Type',   p.vehicle.type)}
+            ${profRow('Colour', p.vehicle.color)}
+          </div>
+        </div>`
+        : `<p style="font-family:var(--mono);font-size:11px;color:var(--txt3);margin-top:8px">No vehicle registered to this citizen ID.</p>`}
+    </div>`;
+}
+
+function profRow(label, val) {
+  return `<div class="prof-row">
+    <div class="prof-row-lbl">${label}</div>
+    <div class="prof-row-val">${val || '—'}</div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────────────
+// UTILITY CREDITS (power tab)
+// ─────────────────────────────────────────────────────
+async function fetchUtilityCredits() {
+  try {
+    const r = await fetch(`${API}/api/v1/utility-credits`);
+    if (!r.ok) return;
+    const d = await r.json();
+    _set('pwr-credits',  `₹${d.total_credits_issued||0}`);
+    _set('pwr-affected', d.citizens_affected||0);
+    const mycredits = Math.min(16.42, (d.total_credits_issued||0)*0.013);
+    _set('pwr-mycredits', `−₹${mycredits.toFixed(2)}`);
+    _set('pwr-net', `₹${(840-mycredits).toFixed(2)}`);
+    const recsEl = document.getElementById('pwr-credit-records');
+    if (recsEl) {
+      if (!d.records || !d.records.length) {
+        recsEl.innerHTML='<div class="empty">No failure zones currently.</div>';
+      } else {
+        recsEl.innerHTML = d.records.slice(0,5).map(rec =>
+          `<div class="feed-row">
+            <div class="feed-dot" style="background:${rec.power_outage?'var(--red)':'var(--cyan)'}"></div>
+            <div class="feed-body">
+              <div class="feed-title">${rec.power_outage?'POWER OUT':'WATER LOSS'}</div>
+              <div class="feed-meta">Node ${JSON.stringify(rec.node)} · ${rec.credit_tokens} tokens</div>
+            </div>
+          </div>`).join('');
+      }
+    }
+  } catch {}
+}
+// Refresh credits every 10s when power tab is shown
+setInterval(fetchUtilityCredits, 10000);
+
+// ─────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────
+function _set(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+function _bar2(id, pct) {
+  const el = document.getElementById(id);
+  if (el) el.style.width = Math.min(100, pct).toFixed(1) + '%';
+}
+function _simTime() {
+  return new Date().toLocaleTimeString('en-IN',{hour12:false});
+}
+
+// ─────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  startClock();
+  // Standalone test with mock citizen
+  if (window.__omnicityMockCitizen) {
+    window.enterDashboard(window.__omnicityMockCitizen);
+  }
+  loadLedger();
+  // Start live map even before auth (public data)
+  startLiveMap();
+  startSentinel();
+  startTraffic();
+  fetchUtilityCredits();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>OmniCity AI — Citizen Trust Gateway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #0d1117;
+  --bg2:      #111820;
+  --bg3:      #161d27;
+  --surface:  #1a2332;
+  --surf2:    #1f2b3d;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.12);
+  --blue:     #3b82f6;
+  --blue-dim: rgba(59,130,246,0.12);
+  --blue-mid: rgba(59,130,246,0.25);
+  --cyan:     #22d3ee;
+  --cyan-dim: rgba(34,211,238,0.1);
+  --green:    #34d399;
+  --green-dim:rgba(52,211,153,0.1);
+  --red:      #f87171;
+  --red-dim:  rgba(248,113,113,0.1);
+  --amber:    #fbbf24;
+  --amber-dim:rgba(251,191,36,0.1);
+  --text:     #e2e8f0;
+  --text2:    #94a3b8;
+  --text3:    #4a5568;
+  --f:        'Inter', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+  --head:     'Syne', sans-serif;
+  --r:        6px;
+  --rl:       10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+
+body {
+  font-family: var(--f);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  /* Very subtle dot grid — quiet, not loud */
+  background-image: radial-gradient(circle, rgba(59,130,246,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.page { max-width: 740px; margin: 0 auto; padding: 28px 18px 60px; }
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 0 24px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+.logo-mark {
+  position: relative;
+  width: 40px; height: 40px;
+  flex-shrink: 0;
+}
+/* Two overlapping squares — clean geometric mark */
+.logo-mark::before, .logo-mark::after {
+  content: '';
+  position: absolute;
+  border: 1.5px solid var(--blue);
+  border-radius: 3px;
+}
+.logo-mark::before { inset: 0; }
+.logo-mark::after {
+  inset: 6px;
+  border-color: var(--cyan);
+  transform: rotate(15deg);
+}
+.logo-inner {
+  position: absolute;
+  inset: 14px;
+  background: var(--blue);
+  border-radius: 2px;
+}
+.logo-text {}
+.logo-name {
+  font-family: var(--head);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.logo-name span { color: var(--blue); }
+.logo-tagline {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(52,211,153,0.15);
+  animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 3px rgba(52,211,153,0.15)} 50%{box-shadow:0 0 0 6px rgba(52,211,153,0.05)} }
+.status-txt {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--green);
+  letter-spacing: 0.06em;
+}
+.pop-chip {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 5px 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  letter-spacing: 0.04em;
+}
+.pop-chip b { color: var(--text); font-weight: 500; }
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  padding: 3px;
+  margin-bottom: 16px;
+}
+.tab {
+  flex: 1;
+  padding: 9px;
+  background: none;
+  border: none;
+  border-radius: var(--r);
+  font-family: var(--head);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.tab.on {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border2);
+}
+.tab:hover:not(.on) { color: var(--text2); }
+
+/* ── STEP BAR ── */
+.steps {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.s {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 11px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 11px;
+  color: var(--text3);
+  transition: all 0.2s;
+}
+.s.on {
+  background: var(--blue-dim);
+  border-color: var(--blue-mid);
+  color: var(--blue);
+}
+.s.done {
+  background: var(--green-dim);
+  border-color: rgba(52,211,153,0.25);
+  color: var(--green);
+}
+.snum {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+.s.done .snum { background: var(--green); border-color: var(--green); color: var(--bg); font-weight: 700; }
+.slbl { font-family: var(--head); font-size: 11px; letter-spacing: 0.04em; font-weight: 700; }
+
+/* ── PANEL ── */
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.panel:focus-within { border-color: var(--border2); }
+
+.phead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+/* Coloured left accent on header */
+.phead::before {
+  content: '';
+  width: 2px;
+  height: 16px;
+  background: var(--blue);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.ptitle {
+  font-family: var(--head);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pstep {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+}
+.pbody { padding: 16px; }
+
+/* ── BANNERS ── */
+.info-bar {
+  display: flex;
+  gap: 9px;
+  padding: 10px 12px;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue-mid);
+  border-radius: var(--r);
+  font-size: 12px;
+  color: #93c5fd;
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+.info-bar svg { flex-shrink: 0; margin-top: 1px; }
+
+.alert { display: none; gap: 9px; padding: 10px 12px; border-radius: var(--r); font-size: 12px; line-height: 1.55; margin-bottom: 12px; }
+.alert.show { display: flex; }
+.alert.err   { background: var(--red-dim);   border: 1px solid rgba(248,113,113,0.25); color: #fca5a5; }
+.alert.warn  { background: var(--amber-dim); border: 1px solid rgba(251,191,36,0.25);  color: #fcd34d; }
+.alert.ok    { background: var(--green-dim); border: 1px solid rgba(52,211,153,0.25);  color: #6ee7b7; }
+.alert.info  { background: var(--blue-dim);  border: 1px solid var(--blue-mid);        color: #93c5fd; }
+
+/* ── FORM ── */
+.row  { display: grid; grid-template-columns: 1fr 1fr;     gap: 10px; margin-bottom: 10px; }
+.full { grid-template-columns: 1fr; }
+.tri  { grid-template-columns: 1fr 1fr 1fr; }
+@media(max-width:520px){ .row,.tri{ grid-template-columns:1fr; } }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.req { color: var(--red); }
+.atag {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid rgba(52,211,153,0.25);
+  border-radius: 3px;
+  padding: 1px 5px;
+  display: none;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+input[type=text],
+input[type=number],
+select,
+textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 9px 11px;
+  color: var(--text);
+  font-family: var(--f);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--blue);
+  background: var(--surface);
+}
+input.ok-fill { border-color: rgba(52,211,153,0.4); color: var(--green); }
+select { cursor: pointer; }
+select option { background: var(--bg2); }
+textarea { resize: vertical; min-height: 68px; line-height: 1.5; }
+.hint { font-size: 11px; color: var(--text3); line-height: 1.4; }
+
+/* ── UPLOAD ── */
+.uzone {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--r);
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s, background 0.15s;
+  background: var(--bg3);
+}
+.uzone:hover {
+  border-color: var(--blue);
+  background: var(--blue-dim);
+}
+.uzone input {
+  position: absolute; inset: 0; opacity: 0;
+  cursor: pointer; width: 100%; height: 100%; padding: 0; border: none;
+}
+.uico {
+  width: 34px; height: 34px;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue-mid);
+  border-radius: var(--r);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 9px;
+  font-size: 16px;
+}
+.utitle { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.usub   { font-size: 11px; color: var(--text3); }
+
+.fprev {
+  display: none;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 11px;
+  background: var(--green-dim);
+  border: 1px solid rgba(52,211,153,0.2);
+  border-radius: var(--r);
+  margin-top: 8px;
+}
+.fprev.show { display: flex; }
+.fthumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border2); flex-shrink: 0; }
+.fname  { font-size: 12px; font-weight: 500; color: var(--green); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fstat  { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* ── OCR CARD ── */
+.ocr { display: none; margin-top: 11px; border: 1px solid var(--border2); border-radius: var(--r); overflow: hidden; }
+.ocr.show { display: block; }
+.ocr-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.ocr-lbl { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 0.06em; }
+.cbadge { font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 3px; }
+.ch { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.25); }
+.cm { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251,191,36,0.25); }
+.cl { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,113,113,0.25); }
+.ocr-body { display: flex; background: var(--surface); }
+.ocr-fields { flex: 1; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ok  { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 2px; font-weight: 500; }
+.ov  { font-size: 13px; color: var(--text); font-weight: 500; }
+.face-col {
+  width: 74px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; padding: 12px 8px;
+  border-left: 1px solid var(--border);
+  background: var(--bg3);
+}
+.fimg { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--green); }
+.ftag { font-size: 10px; color: var(--green); font-family: var(--mono); text-align: center; line-height: 1.3; letter-spacing: 0.04em; }
+
+/* ── TOGGLE ── */
+.trow {
+  display: flex; align-items: center; gap: 13px;
+  padding: 13px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+.trow:hover { background: rgba(255,255,255,0.02); }
+.tog {
+  width: 38px; height: 21px;
+  background: var(--border2);
+  border-radius: 11px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.tog::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 15px; height: 15px;
+  background: var(--text3);
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+.tog.on { background: var(--blue); }
+.tog.on::after { transform: translateX(17px); background: #fff; }
+.ttitle { font-size: 13px; font-weight: 500; color: var(--text); }
+.tdesc  { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.vbody {
+  display: none; padding: 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg3);
+}
+.vbody.open { display: block; }
+
+/* Plate result */
+.plate-r {
+  display: none; align-items: center; gap: 9px;
+  padding: 9px 12px;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue-mid);
+  border-radius: var(--r);
+  margin-top: 9px;
+}
+.plate-r.show { display: flex; }
+.plabel { font-size: 11px; color: var(--text2); font-family: var(--mono); }
+.pval {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cyan);
+  background: var(--cyan-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  padding: 2px 9px;
+  border-radius: 3px;
+  letter-spacing: 0.08em;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   DASHBOARD — Command Center
+══════════════════════════════════════════════════════ */
+
+/* Widen page for 2-column dashboard layout */
+.page.dashboard-active { max-width: 1100px; }
+
+#dashboard { display: none; }
+#dashboard.on { display: block; }
+
+/* Top system bar above the two columns */
+.db-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  margin-bottom: 14px;
+}
+.db-topbar-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.db-topbar-val {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--cyan);
+  letter-spacing: 0.06em;
+}
+.db-topbar-sep { color: var(--border2); font-size: 12px; margin: 0 2px; }
+.db-topbar-spacer { flex: 1; }
+.db-clock {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+  letter-spacing: 0.1em;
+}
+
+/* Two-column grid */
+.db-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 720px) { .db-grid { grid-template-columns: 1fr; } }
+
+/* ── Module A: Identity Token Panel ── */
+.id-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  overflow: hidden;
+}
+
+/* Face / CV2 bounding box area */
+.id-face-area {
+  position: relative;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  min-height: 160px;
+}
+/* Animated corner brackets — simulated CV2 bounding box */
+.cv2-frame {
+  position: relative;
+  width: 90px; height: 90px;
+}
+.cv2-frame::before, .cv2-frame::after,
+.cv2-frame .cv2-br, .cv2-frame .cv2-bl {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: var(--cyan);
+  border-style: solid;
+}
+.cv2-frame::before  { top: 0;    left: 0;  border-width: 2px 0 0 2px; }
+.cv2-frame::after   { top: 0;    right: 0; border-width: 2px 2px 0 0; }
+.cv2-frame .cv2-br  { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+.cv2-frame .cv2-bl  { bottom: 0; left: 0;  border-width: 0 0 2px 2px; }
+.cv2-photo {
+  width: 82px; height: 82px;
+  border-radius: var(--r);
+  object-fit: cover;
+  display: block;
+}
+.cv2-photo.placeholder {
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--text3);
+}
+/* Scan line animation on face — subtle, one pass */
+.cv2-scanline {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(34,211,238,0.6), transparent);
+  animation: scanPass 2.5s ease-in-out 1 forwards;
+  pointer-events: none;
+}
+@keyframes scanPass {
+  0%   { top: 0%;   opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+/* Verified badge bottom-right */
+.cv2-verified {
+  position: absolute;
+  bottom: 8px; right: 8px;
+  background: var(--green-dim);
+  border: 1px solid rgba(52,211,153,0.35);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--green);
+  padding: 2px 6px;
+  letter-spacing: 0.08em;
+}
+
+/* Identity fields */
+.id-fields {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.id-field { display: flex; flex-direction: column; gap: 3px; }
+.id-field-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.id-field-val {
+  font-family: var(--f);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  word-break: break-all;
+}
+.id-field-val.mono {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--cyan);
+  letter-spacing: 0.04em;
+}
+
+/* Karma pill */
+.karma-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--green-dim);
+  border: 1px solid rgba(52,211,153,0.3);
+  border-radius: var(--r);
+  padding: 4px 9px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--green);
+  font-weight: 500;
+}
+.karma-pill-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s infinite;
+}
+
+/* Node chip */
+.node-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue-mid);
+  border-radius: var(--r);
+  padding: 4px 9px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--blue);
+}
+
+/* Logout button */
+.logout-btn {
+  margin: 0 14px 14px;
+  width: calc(100% - 28px);
+  padding: 9px;
+  background: var(--red-dim);
+  border: 1px solid rgba(248,113,113,0.25);
+  border-radius: var(--r);
+  color: var(--red);
+  font-family: var(--head);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.logout-btn:hover {
+  background: rgba(248,113,113,0.2);
+  border-color: rgba(248,113,113,0.5);
+}
+
+/* id-panel section divider */
+.id-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 14px;
+}
+
+/* ── Module B: Right column modules ── */
+.module-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Module card — reuses .panel but with accent variants */
+.mod-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--rl);
+  overflow: hidden;
+}
+.mod-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.mod-head-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.mod-head-title {
+  font-family: var(--head);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.mod-head-status {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+.mhs-standby  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251,191,36,0.25); }
+.mhs-active   { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.25); }
+.mhs-linking  { background: var(--blue-dim);  color: var(--blue);  border: 1px solid var(--blue-mid); }
+.mhs-filed    { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.25); }
+.mod-body { padding: 14px; }
+
+/* Chhaya toggle row */
+.chhaya-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s;
+  margin-bottom: 10px;
+}
+.chhaya-row:hover { border-color: var(--border2); }
+.chhaya-row.chhaya-on { border-color: rgba(34,211,238,0.3); background: var(--cyan-dim); }
+.chhaya-tog {
+  width: 38px; height: 21px;
+  background: var(--border2);
+  border-radius: 11px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.chhaya-tog::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 15px; height: 15px;
+  background: var(--text3);
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+.chhaya-tog.on { background: var(--cyan); }
+.chhaya-tog.on::after { transform: translateX(17px); background: #fff; }
+.chhaya-text {}
+.chhaya-title { font-size: 13px; font-weight: 500; color: var(--text); }
+.chhaya-sub   { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+/* Node tracking display */
+.chhaya-tracker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+}
+.chhaya-tracker.tracking {
+  border-color: rgba(34,211,238,0.3);
+  color: var(--cyan);
+}
+.ct-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text3);
+  flex-shrink: 0;
+}
+.chhaya-tracker.tracking .ct-dot {
+  background: var(--cyan);
+  animation: pulse 1.5s infinite;
+}
+.ct-coords {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cyan);
+  margin-left: auto;
+}
+
+/* Report form */
+.report-alert {
+  display: none;
+  padding: 9px 12px;
+  border-radius: var(--r);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.report-alert.show { display: block; }
+.report-alert.ok  { background: var(--green-dim); border: 1px solid rgba(52,211,153,0.25); color: #6ee7b7; }
+.report-alert.err { background: var(--red-dim);   border: 1px solid rgba(248,113,113,0.25); color: #fca5a5; }
+
+/* Ledger list */
+.ledger-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 14px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.ledger-item {
+  display: flex;
+  gap: 10px;
+  padding: 9px 11px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  transition: border-color 0.15s;
+}
+.ledger-item:hover { border-color: var(--border2); }
+.li-id {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--cyan);
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+.li-body { flex: 1; min-width: 0; }
+.li-type {
+  font-family: var(--head);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.03em;
+}
+.li-desc {
+  font-size: 11px;
+  color: var(--text3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+.li-status {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  align-self: flex-start;
+  background: var(--amber-dim);
+  color: var(--amber);
+  border: 1px solid rgba(251,191,36,0.2);
+}
+.li-status.open   { background: var(--amber-dim); color: var(--amber); border-color: rgba(251,191,36,0.2); }
+.li-status.closed { background: var(--green-dim); color: var(--green); border-color: rgba(52,211,153,0.2); }
+
+/* Submit row inside module */
+.mod-submit-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: flex-start;
+}
+.mod-sbtn {
+  padding: 9px 16px;
+  background: var(--blue);
+  border: none;
+  border-radius: var(--r);
+  color: #fff;
+  font-family: var(--head);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.mod-sbtn:hover { background: #2563eb; }
+.mod-sbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.mod-sbtn.cyan { background: rgba(34,211,238,0.15); border: 1px solid rgba(34,211,238,0.3); color: var(--cyan); }
+.mod-sbtn.cyan:hover { background: rgba(34,211,238,0.25); }
+
+.sbtn {
+  width: 100%;
+  padding: 12px;
+  background: var(--blue);
+  border: none;
+  border-radius: var(--r);
+  color: #fff;
+  font-family: var(--head);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  margin-top: 10px;
+}
+.sbtn:hover { background: #2563eb; }
+.sbtn:active { transform: scale(0.99); }
+.sbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Legal */
+.legal {
+  display: flex; gap: 9px;
+  padding: 10px 12px;
+  background: var(--amber-dim);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: var(--r);
+  font-size: 12px;
+  color: #fcd34d;
+  line-height: 1.55;
+}
+
+/* ── DIVIDER ── */
+.div { height: 1px; background: var(--border); margin: 14px 0; }
+
+/* ── PROCESSING ── */
+.proc {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(3px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.proc.on { display: flex; }
+.pbox {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--rl);
+  padding: 26px 28px;
+  min-width: 280px;
+  text-align: center;
+}
+/* Spinner is two concentric arcs */
+.spin {
+  width: 38px; height: 38px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--blue);
+  border-right-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin: 0 auto 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ptitle { font-family: var(--head); font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: 0.04em; margin-bottom: 14px; }
+.psteps { display: flex; flex-direction: column; gap: 7px; text-align: left; }
+.pstep  { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text3); }
+.pdot   { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); flex-shrink: 0; transition: background 0.2s; }
+.pstep.done   .pdot { background: var(--green); }
+.pstep.active .pdot { background: var(--blue); }
+.pstep.done  { color: var(--text2); }
+.pstep.active { color: var(--text); font-weight: 500; }
+
+/* ── SUCCESS ── */
+.sview { display: none; }
+.sview.on { display: block; }
+
+.shead {
+  padding: 24px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--rl);
+  text-align: center;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+/* Subtle corner decoration */
+.shead::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(59,130,246,0.12), transparent 70%);
+}
+.s-verified-ring {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--green);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+  font-size: 22px;
+  background: var(--green-dim);
+  position: relative;
+}
+.stitle { font-family: var(--head); font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: 0.02em; }
+.ssub   { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+.ccard {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--rl);
+  overflow: hidden;
+}
+.ctop {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.cface {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--blue);
+  flex-shrink: 0;
+}
+.cname { font-family: var(--head); font-size: 15px; font-weight: 700; color: var(--text); }
+.cuid  { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 3px; }
+.cnum  { margin-left: auto; text-align: right; }
+.cnuml { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+.cnumv { font-family: var(--head); font-size: 22px; font-weight: 800; color: var(--text); }
+
+.cfields { display: grid; grid-template-columns: repeat(3,1fr); }
+.cf { padding: 12px 14px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.cf:last-child { border-right: none; }
+.cfl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; font-weight: 500; }
+.cfv { font-size: 12px; font-weight: 500; color: var(--text); font-family: var(--mono); }
+
+.cfooter { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.kl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+.kv { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--green); margin-top: 2px; }
+.cmsg { font-size: 12px; color: var(--text2); line-height: 1.55; max-width: 320px; }
+
+.ebtn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; margin-top: 12px;
+  padding: 12px;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue-mid);
+  border-radius: var(--r);
+  color: var(--blue);
+  font-family: var(--head);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.ebtn:hover { background: rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.4); }
+
+/* ── LOGIN ── */
+.lwrap { padding: 22px; }
+.lhead { font-family: var(--head); font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: 0.02em; margin-bottom: 3px; }
+.lsub  { font-size: 12px; color: var(--text3); margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<!-- Processing -->
+<div class="proc" id="proc">
+  <div class="pbox">
+    <div class="spin"></div>
+    <div class="ptitle">Verifying Identity</div>
+    <div class="psteps">
+      <div class="pstep" id="ps1"><div class="pdot"></div>Scanning Aadhaar document</div>
+      <div class="pstep" id="ps2"><div class="pdot"></div>Extracting biometric face</div>
+      <div class="pstep" id="ps3"><div class="pdot"></div>Running OCR pipeline</div>
+      <div class="pstep" id="ps4"><div class="pdot"></div>Cross-checking fraud database</div>
+      <div class="pstep" id="ps5"><div class="pdot"></div>Linking to city grid</div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-mark"><div class="logo-inner"></div></div>
+      <div class="logo-text">
+        <div class="logo-name">Omni<span>City</span> AI</div>
+        <div class="logo-tagline">Citizen Trust Gateway &nbsp;·&nbsp; v1.0</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-dot"></div>
+      <span class="status-txt">System Online</span>
+      <div class="pop-chip" id="popB">— citizens</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('r')">Register Citizen</button>
+    <button class="tab"    onclick="switchTab('l')">Sign In</button>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="RV">
+    <div id="MF">
+
+      <!-- Steps -->
+      <div class="steps">
+        <div class="s on" id="si1"><div class="snum">1</div><span class="slbl">Aadhaar</span></div>
+        <div class="s"    id="si2"><div class="snum">2</div><span class="slbl">Details</span></div>
+        <div class="s"    id="si3"><div class="snum">3</div><span class="slbl">Vehicle</span></div>
+        <div class="s"    id="si4"><div class="snum">4</div><span class="slbl">Confirm</span></div>
+      </div>
+
+      <div class="alert" id="gA"></div>
+
+      <!-- Step 1: Aadhaar -->
+      <div class="panel">
+        <div class="phead">
+          <span class="ptitle">Aadhaar Identity Verification</span>
+          <span class="pstep">01 / 04</span>
+        </div>
+        <div class="pbody">
+          <div class="info-bar">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Upload the <strong>photo side</strong> of your Aadhaar card. The system will automatically extract your identity data using AI-powered OCR. Your biometric data is hashed and never stored in plain text.</span>
+          </div>
+
+          <div class="uzone" id="aZ">
+            <input type="file" id="aF" accept="image/*" onchange="handleAadhaar(this)"/>
+            <div class="uico">📄</div>
+            <div class="utitle">Upload Aadhaar Card</div>
+            <div class="usub">Click to browse or drag and drop &nbsp;·&nbsp; JPG, PNG, WEBP</div>
+          </div>
+
+          <div class="fprev" id="aP">
+            <img class="fthumb" id="aThumb" src="" alt=""/>
+            <div><div class="fname" id="aFn"></div><div class="fstat" id="aSt">Processing…</div></div>
+          </div>
+
+          <div class="ocr" id="ocrC">
+            <div class="ocr-head">
+              <span class="ocr-lbl">Extraction result</span>
+              <span class="cbadge" id="cBadge"></span>
+            </div>
+            <div class="ocr-body">
+              <div class="ocr-fields" id="ocrF"></div>
+              <div class="face-col" id="faceC" style="display:none">
+                <img class="fimg" id="faceI" src="" alt="Face"/>
+                <div class="ftag">FACE<br>DETECTED</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Personal details -->
+      <div class="panel">
+        <div class="phead">
+          <span class="ptitle">Citizen Profile</span>
+          <span class="pstep">02 / 04</span>
+        </div>
+        <div class="pbody">
+          <div class="row">
+            <div class="field">
+              <label class="lbl">Full Name <span class="req">*</span><span class="atag" id="nTag">auto-filled</span></label>
+              <input type="text" id="fName" placeholder="As on Aadhaar card"/>
+            </div>
+            <div class="field">
+              <label class="lbl">Aadhaar Last 4 Digits <span class="req">*</span></label>
+              <input type="text" id="a4" placeholder="e.g. 4532" maxlength="4" style="font-family:var(--mono);letter-spacing:.08em"/>
+              <div class="hint">Full number is cryptographically hashed. Only last 4 digits are stored.</div>
+            </div>
+          </div>
+          <div class="row tri">
+            <div class="field">
+              <label class="lbl">Age <span class="req">*</span><span class="atag" id="ageTag">auto-filled</span></label>
+              <input type="number" id="age" placeholder="18–99" min="18" max="99"/>
+            </div>
+            <div class="field">
+              <label class="lbl">Gender <span class="req">*</span><span class="atag" id="genTag">auto-filled</span></label>
+              <select id="gender">
+                <option value="">— Select —</option>
+                <option>Male</option><option>Female</option>
+                <option>Non-Binary</option><option>Prefer not to say</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl">Date of Birth<span class="atag" id="dobTag">auto-filled</span></label>
+              <input type="text" id="dob" placeholder="DD/MM/YYYY"/>
+            </div>
+          </div>
+          <div class="row full">
+            <div class="field">
+              <label class="lbl">Address<span class="atag" id="adTag">auto-filled</span></label>
+              <textarea id="addr" placeholder="Extracted from Aadhaar, or enter manually"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Vehicle -->
+      <div class="panel">
+        <div class="phead">
+          <span class="ptitle">Vehicle Registration</span>
+          <span class="pstep">03 / 04 &nbsp;—&nbsp; Optional</span>
+        </div>
+        <div class="trow" onclick="toggleV()">
+          <div class="tog" id="vTog"></div>
+          <div>
+            <div class="ttitle">I own a registered vehicle</div>
+            <div class="tdesc">Links vehicle to citizen ID — required for Green Wave and AI Sentinel tracking</div>
+          </div>
+        </div>
+        <div class="vbody" id="VB">
+          <div class="row">
+            <div class="field">
+              <label class="lbl">Vehicle Type <span class="req">*</span></label>
+              <select id="vType">
+                <option value="">— Select —</option>
+                <option>Car</option><option>Bike / Motorcycle</option>
+                <option>Auto-Rickshaw</option><option>Truck</option><option>Electric Vehicle</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl">Make & Model <span class="req">*</span></label>
+              <input type="text" id="vModel" placeholder="e.g. Maruti Swift, Honda Activa"/>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label class="lbl">Number Plate <span class="req">*</span></label>
+              <input type="text" id="vPlate" placeholder="UP32-AB-1234"
+                style="font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase"
+                oninput="this.value=this.value.toUpperCase()"/>
+              <div class="hint">Will be OCR-verified against your uploaded photos</div>
+            </div>
+            <div class="field">
+              <label class="lbl">Vehicle Colour <span class="req">*</span></label>
+              <input type="text" id="vColor" placeholder="e.g. Pearl White"/>
+            </div>
+          </div>
+          <div class="div"></div>
+          <div class="lbl" style="margin-bottom:8px">Vehicle Photos <span class="req">*</span></div>
+          <div class="hint" style="margin-bottom:12px">Both front and rear images must clearly show the number plate. Blurry or obscured images will be rejected.</div>
+          <div class="row">
+            <div class="field">
+              <label class="lbl" style="margin-bottom:6px">Front View</label>
+              <div class="uzone">
+                <input type="file" id="vFF" accept="image/*" onchange="vPrev(this,'front')"/>
+                <div class="uico" style="font-size:14px">🚗</div>
+                <div class="utitle" style="font-size:12px">Front of vehicle</div>
+                <div class="usub">Plate must be visible</div>
+              </div>
+              <div class="fprev" id="vFP">
+                <img class="fthumb" id="vFT" src="" alt=""/>
+                <div><div class="fname" id="vFN"></div><div class="fstat" id="vFS">Queued for OCR</div></div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="lbl" style="margin-bottom:6px">Rear View <span style="font-weight:400;opacity:.5;text-transform:none;letter-spacing:0">(optional)</span></label>
+              <div class="uzone">
+                <input type="file" id="vRF" accept="image/*" onchange="vPrev(this,'rear')"/>
+                <div class="uico" style="font-size:14px">🚘</div>
+                <div class="utitle" style="font-size:12px">Rear of vehicle</div>
+                <div class="usub">Recommended for accuracy</div>
+              </div>
+              <div class="fprev" id="vRP">
+                <img class="fthumb" id="vRT" src="" alt=""/>
+                <div><div class="fname" id="vRN"></div><div class="fstat" id="vRS">Queued for OCR</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="alert" id="plA"></div>
+          <div class="plate-r" id="plR">
+            <span class="plabel">OCR_PLATE_DETECTED:</span>
+            <span class="pval" id="plV">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Submit -->
+      <div class="panel">
+        <div class="phead">
+          <span class="ptitle">Review & Confirm</span>
+          <span class="pstep">04 / 04</span>
+        </div>
+        <div class="pbody">
+          <div class="legal">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>By submitting, you confirm all information is accurate and this Aadhaar belongs to you. Fraudulent or duplicate registrations are a criminal offence under the OmniCity Zero-Fraud Policy.</span>
+          </div>
+          <button class="sbtn" id="subBtn" onclick="doSubmit()">Register Citizen Identity →</button>
+        </div>
+      </div>
+
+    </div><!-- /MF -->
+
+    <!-- SUCCESS -->
+    <div class="sview" id="SV">
+      <div class="shead">
+        <div class="s-verified-ring">✦</div>
+        <div class="stitle">Identity Verified & Registered</div>
+        <div class="ssub" id="sSub">Welcome to OmniCity</div>
+      </div>
+      <div class="ccard">
+        <div class="ctop">
+          <img class="cface" id="sImg" src="" alt="Citizen"/>
+          <div>
+            <div class="cname" id="sName"></div>
+            <div class="cuid" id="sUid"></div>
+          </div>
+          <div class="cnum">
+            <div class="cnuml">Citizen No.</div>
+            <div class="cnumv" id="sNum"></div>
+          </div>
+        </div>
+        <div class="cfields" id="sCF"></div>
+        <div class="cfooter">
+          <div><div class="kl">Karma Score</div><div class="kv" id="sKarma">1.0</div></div>
+          <div class="cmsg" id="sMsg"></div>
+        </div>
+      </div>
+      <a class="ebtn" href="#">Enter OmniCity Dashboard →</a>
+    </div>
+
+  </div><!-- /RV -->
+
+  <!-- LOGIN -->
+  <div id="LV" style="display:none">
+    <div class="panel">
+      <div class="lwrap">
+        <div class="lhead">Citizen Authentication</div>
+        <div class="lsub">Access your OmniCity profile using your registered name and Aadhaar details</div>
+        <div class="alert" id="lA"></div>
+        <div class="row full" style="margin-bottom:10px">
+          <div class="field">
+            <label class="lbl">Registered Full Name <span class="req">*</span></label>
+            <input type="text" id="lN" placeholder="Exactly as registered"/>
+          </div>
+        </div>
+        <div class="row full" style="margin-bottom:16px">
+          <div class="field">
+            <label class="lbl">Aadhaar Last 4 Digits <span class="req">*</span></label>
+            <input type="text" id="lA4" placeholder="e.g. 4532" maxlength="4" style="font-family:var(--mono);letter-spacing:.08em"/>
+          </div>
+        </div>
+        <button class="sbtn" onclick="doLogin()">Authenticate & Enter →</button>
+        <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text3)">
+          Not registered? <a href="#" onclick="switchTab('r');return false" style="color:var(--blue);font-weight:500">Create citizen profile →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     DASHBOARD — revealed after successful auth / registration
+══════════════════════════════════════════════════════════════ -->
+<div id="dashboard">
+
+  <!-- System status topbar -->
+  <div class="db-topbar">
+    <span class="db-topbar-label">Session</span>
+    <span class="db-topbar-val" id="db-session-name">—</span>
+    <span class="db-topbar-sep">|</span>
+    <span class="db-topbar-label">Node</span>
+    <span class="db-topbar-val" id="db-session-node">—</span>
+    <span class="db-topbar-sep">|</span>
+    <span class="db-topbar-label">Status</span>
+    <span class="db-topbar-val" style="color:var(--green)">● AUTHENTICATED</span>
+    <span class="db-topbar-spacer"></span>
+    <span class="db-clock" id="db-clock">—</span>
+  </div>
+
+  <div class="db-grid">
+
+    <!-- ═══════════ MODULE A: Identity Token Panel ═══════════ -->
+    <div class="id-panel">
+
+      <!-- CV2 Face Detection area -->
+      <div class="id-face-area">
+        <div class="cv2-frame">
+          <img class="cv2-photo" id="db-face-img" src="" alt="citizen face" onerror="this.style.display='none';document.getElementById('db-face-placeholder').style.display='flex'"/>
+          <div class="cv2-photo placeholder" id="db-face-placeholder" style="display:none">👤</div>
+          <div class="cv2-br"></div>
+          <div class="cv2-bl"></div>
+          <div class="cv2-scanline" id="db-scanline"></div>
+        </div>
+        <div class="cv2-verified">CV2 ✓ VERIFIED</div>
+      </div>
+
+      <!-- Identity fields -->
+      <div class="id-fields">
+
+        <div class="id-field">
+          <div class="id-field-label">Verified Name</div>
+          <div class="id-field-val" id="db-name">—</div>
+        </div>
+
+        <div class="id-divider"></div>
+
+        <div class="id-field">
+          <div class="id-field-label">Citizen UID</div>
+          <div class="id-field-val mono" id="db-uid">—</div>
+        </div>
+
+        <div class="id-divider"></div>
+
+        <div class="id-field">
+          <div class="id-field-label">Karma Score</div>
+          <div class="karma-pill" id="db-karma">
+            <div class="karma-pill-dot"></div>
+            <span id="db-karma-val">—</span>
+          </div>
+        </div>
+
+        <div class="id-divider"></div>
+
+        <div class="id-field">
+          <div class="id-field-label">Spatial Node</div>
+          <div class="node-chip" id="db-node-chip">
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+            <span id="db-node-val">Node [—, —]</span>
+          </div>
+        </div>
+
+      </div><!-- /id-fields -->
+
+      <!-- Logout -->
+      <div class="id-divider" style="margin:0"></div>
+      <button class="logout-btn" onclick="doLogout()">⊗ &nbsp;Disconnect Session</button>
+
+    </div><!-- /id-panel -->
+
+    <!-- ═══════════ MODULE B: Right column ═══════════ -->
+    <div class="module-col">
+
+      <!-- ── Chhaya Protocol ── -->
+      <div class="mod-card">
+        <div class="mod-head">
+          <span class="mod-head-icon">🛡️</span>
+          <span class="mod-head-title">Chhaya Protocol</span>
+          <span class="mod-head-status mhs-standby" id="chhaya-status-badge">STANDBY</span>
+        </div>
+        <div class="mod-body">
+
+          <div class="chhaya-row" id="chhaya-row" onclick="toggleChhaya()">
+            <div class="chhaya-tog" id="chhaya-tog"></div>
+            <div class="chhaya-text">
+              <div class="chhaya-title">AI Safety Escort</div>
+              <div class="chhaya-sub" id="chhaya-sub-txt">Tap to activate — the city will watch over you</div>
+            </div>
+          </div>
+
+          <div class="chhaya-tracker" id="chhaya-tracker">
+            <div class="ct-dot"></div>
+            <span id="chhaya-tracker-txt">Awaiting activation…</span>
+            <span class="ct-coords" id="chhaya-coords" style="display:none">—</span>
+          </div>
+
+          <div style="margin-top:10px;font-size:11px;color:var(--text3);line-height:1.6">
+            When active, the AI Sentinel hands off your location from camera to camera. 
+            If you deviate from your path or are followed, the nearest patrol unit is 
+            alerted instantly.
+          </div>
+
+        </div>
+      </div><!-- /chhaya -->
+
+      <!-- ── Public Ledger Anomaly Reporting Hub ── -->
+      <div class="mod-card">
+        <div class="mod-head">
+          <span class="mod-head-icon">⚠️</span>
+          <span class="mod-head-title">Anomaly Reporting Hub</span>
+          <span class="mod-head-status mhs-standby" id="report-status-badge">PUBLIC LEDGER</span>
+        </div>
+        <div class="mod-body">
+
+          <div class="report-alert" id="report-alert"></div>
+
+          <div class="row full" style="margin-bottom:10px">
+            <div class="field">
+              <label class="lbl">Incident Category <span class="req">*</span></label>
+              <select id="report-category">
+                <option value="">— Select category —</option>
+                <option value="GRID_BLACKOUT">⚡ Power Grid Failure / Blackout</option>
+                <option value="PIPE_BURST">💧 Water Pipeline Rupture</option>
+                <option value="ACCIDENT">🚗 Traffic Accident</option>
+                <option value="ROAD_DEBRIS">🪨 Road Debris / Obstruction</option>
+                <option value="THEFT">🔓 Theft / Robbery</option>
+                <option value="WEAPON">🔫 Weapon / Threat Detected</option>
+                <option value="OTHER">📋 Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row full" style="margin-bottom:0">
+            <div class="field">
+              <label class="lbl">Incident Details <span class="req">*</span></label>
+              <textarea id="report-desc" placeholder="Describe what you observed — location, time, people involved, severity…" style="min-height:80px"></textarea>
+            </div>
+          </div>
+
+          <div class="mod-submit-row">
+            <button class="mod-sbtn" id="report-btn" onclick="submitReport()">File Report →</button>
+            <div style="font-size:11px;color:var(--text3);line-height:1.5;padding-top:2px">
+              Reports are <span style="color:var(--cyan)">verified by multi-sensor fusion</span> before 
+              alerting authorities. Fake reports reduce your Karma score.
+            </div>
+          </div>
+
+          <!-- Recent reports ledger -->
+          <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase">Recent Reports</span>
+            <button onclick="loadLedger()" style="background:none;border:none;color:var(--blue);font-family:var(--mono);font-size:10px;cursor:pointer;letter-spacing:0.04em">↻ Refresh</button>
+          </div>
+          <div class="ledger-list" id="ledger-list">
+            <div style="text-align:center;padding:16px;font-size:12px;color:var(--text3)">No reports filed yet.</div>
+          </div>
+
+        </div>
+      </div><!-- /report -->
+
+    </div><!-- /module-col -->
+  </div><!-- /db-grid -->
+</div><!-- /dashboard -->
+
+</div><!-- /page -->
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════
+// ║  OmniCity AI — Citizen Trust Gateway  |  Frontend Script v4.2
+// ╚══════════════════════════════════════════════════════════════════
+
+// ── API URL CONFIG ────────────────────────────────────────────────
+// Cloudflare Tunnel users: paste backend tunnel URL here as a string.
+//   e.g.  const API_OVERRIDE = 'https://xxxx.trycloudflare.com';
+const API_OVERRIDE = '';
+
+const API = (() => {
+  if (API_OVERRIDE) return API_OVERRIDE.replace(/\/$/, '');
+  const proto = window.location.protocol;
+  const h     = window.location.hostname;
+  if (proto === 'file:' || h === '' || h === 'localhost' || h === '127.0.0.1')
+    return 'http://localhost:8000';
+  return window.location.origin;
+})();
+// ─────────────────────────────────────────────────────────────────
+
+// ── Global state ──────────────────────────────────────────────────
+const S = {
+  // Registration flow
+  tok: null, hasV: false, vImgId: null, plateOcr: null,
+  // Authenticated session
+  citizen: null,          // { citizen_uid, name, karma_score, grid_node, face_preview }
+  chhayaActive: false,
+  chhayaInterval: null,
+  clockInterval: null,
+};
+
+// ══════════════════════════════════════════════════════════════════
+// GATEWAY (login / register) — unchanged mechanics
+// ══════════════════════════════════════════════════════════════════
+
+async function loadPop() {
+  try {
+    const r = await fetch(`${API}/citizens/count`);
+    const d = await r.json();
+    document.getElementById('popB').innerHTML = `<b>${d.total}</b> citizens registered`;
+  } catch { document.getElementById('popB').textContent = 'Backend offline'; }
+}
+loadPop();
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((b,i) =>
+    b.classList.toggle('on', (t==='r'&&i===0)||(t==='l'&&i===1)));
+  document.getElementById('RV').style.display = t==='r' ? '' : 'none';
+  document.getElementById('LV').style.display = t==='l' ? '' : 'none';
+}
+
+function toggleV() {
+  S.hasV = !S.hasV;
+  document.getElementById('vTog').classList.toggle('on', S.hasV);
+  document.getElementById('VB').classList.toggle('open', S.hasV);
+  setStep(S.hasV ? 3 : 2);
+}
+
+function setStep(n) {
+  for (let i=1; i<=4; i++) {
+    const el = document.getElementById(`si${i}`);
+    el.classList.remove('on','done');
+    if (i < n)  el.classList.add('done');
+    if (i === n) el.classList.add('on');
+  }
+}
+
+async function handleAadhaar(inp) {
+  const file = inp.files[0]; if (!file) return;
+  document.getElementById('aP').classList.add('show');
+  document.getElementById('aThumb').src = URL.createObjectURL(file);
+  document.getElementById('aFn').textContent = file.name;
+  const st = document.getElementById('aSt');
+  st.textContent = 'Uploading…';
+  showA('gA','info','Analysing Aadhaar card. First run may take 10–30 seconds while the OCR model loads.');
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    const r = await fetch(`${API}/register/verify-aadhaar`, {method:'POST', body:fd});
+    const d = await r.json();
+    if (!r.ok) { st.textContent = 'Verification failed'; showA('gA','err',d.detail||'Aadhaar verification failed.'); return; }
+    S.tok = d.session_token; clearA('gA');
+    st.textContent = '✓ Verified — data extracted';
+    fill('fName', d.extracted.name,    'nTag');
+    fill('dob',   d.extracted.dob,     'dobTag');
+    fill('addr',  d.extracted.address, 'adTag');
+    if (d.extracted.gender) {
+      const sel = document.getElementById('gender');
+      for (const o of sel.options)
+        if (o.value.toLowerCase() === d.extracted.gender.toLowerCase()) { sel.value = o.value; tag('genTag'); break; }
+    }
+    if (d.extracted.dob) {
+      const yr = d.extracted.dob.split(/[\/\-]/)[2];
+      if (yr) { const a = new Date().getFullYear() - parseInt(yr); if (a>0&&a<120) { document.getElementById('age').value=a; tag('ageTag'); } }
+    }
+    renderOcr(d.extracted, d.face_preview ? `${API}${d.face_preview}` : null);
+    setStep(2);
+  } catch(e) { st.textContent='Network error'; showA('gA','err',`Cannot reach backend: ${e.message}.`); }
+}
+
+function fill(id, val, tagId) {
+  if (!val) return;
+  const el = document.getElementById(id); el.value = val; el.classList.add('ok-fill'); tag(tagId);
+}
+function tag(id) { const el = document.getElementById(id); if (el) el.style.display = 'inline-block'; }
+
+function renderOcr(data, faceUrl) {
+  document.getElementById('ocrC').classList.add('show');
+  const rows = [['Name',data.name||'—'],['DOB',data.dob||'—'],['Gender',data.gender||'—'],
+                ['Aadhaar',data.aadhaar_number?'●●●● '+data.aadhaar_number.slice(-4):'—']];
+  document.getElementById('ocrF').innerHTML = rows.map(([k,v]) =>
+    `<div><div class="ok">${k}</div><div class="ov">${v}</div></div>`).join('');
+  const cmap = {high:['ch','High confidence'],medium:['cm','Medium confidence'],low:['cl','Low — check fields']};
+  const [cls,lbl] = cmap[data.confidence] || cmap.low;
+  const cb = document.getElementById('cBadge'); cb.className = `cbadge ${cls}`; cb.textContent = lbl;
+  if (faceUrl) { document.getElementById('faceI').src = faceUrl; document.getElementById('faceC').style.display = ''; }
+}
+
+function vPrev(inp, side) {
+  const file = inp.files[0]; if (!file) return;
+  const p = side==='front'?'vFP':'vRP', t = side==='front'?'vFT':'vRT',
+        n = side==='front'?'vFN':'vRN', s = side==='front'?'vFS':'vRS';
+  document.getElementById(p).classList.add('show');
+  document.getElementById(t).src = URL.createObjectURL(file);
+  document.getElementById(n).textContent = file.name;
+  document.getElementById(s).textContent = 'Ready — plate OCR on submit';
+}
+
+async function doSubmit() {
+  if (!S.tok) { showA('gA','err','Please upload your Aadhaar card first.'); return; }
+  const name   = document.getElementById('fName').value.trim();
+  const a4     = document.getElementById('a4').value.trim();
+  const age    = document.getElementById('age').value;
+  const gender = document.getElementById('gender').value;
+  if (!name||!a4||!age||!gender) { showA('gA','err','Please fill in all required fields.'); return; }
+  if (a4.length!==4||isNaN(a4))  { showA('gA','err','Aadhaar last 4 digits must be exactly 4 numbers.'); return; }
+  showProc();
+  const fd = new FormData();
+  fd.append('session_token',S.tok); fd.append('full_name',name); fd.append('age',age);
+  fd.append('gender',gender); fd.append('dob',document.getElementById('dob').value.trim());
+  fd.append('address_text',document.getElementById('addr').value.trim());
+  fd.append('aadhaar_last4',a4); fd.append('has_vehicle',S.hasV);
+  if (S.hasV) {
+    const plate = document.getElementById('vPlate').value.trim().toUpperCase();
+    const vtype = document.getElementById('vType').value;
+    const model = document.getElementById('vModel').value.trim();
+    const color = document.getElementById('vColor').value.trim();
+    const front = document.getElementById('vFF').files[0];
+    if (!plate||!vtype||!model||!color||!front) { hideProc(); showA('gA','err','Fill in all vehicle fields and upload at least the front photo.'); return; }
+    setPS(4);
+    const vfd = new FormData(); vfd.append('front',front);
+    const rear = document.getElementById('vRF').files[0]; if (rear) vfd.append('rear',rear);
+    try {
+      const vr = await fetch(`${API}/register/verify-vehicle-plate`,{method:'POST',body:vfd});
+      const vd = await vr.json();
+      if (!vr.ok) { hideProc(); showA('gA','err',vd.detail||'Vehicle photo verification failed.'); return; }
+      S.vImgId = vd.vehicle_image_id; S.plateOcr = vd.detected_plate;
+      fd.append('vehicle_image_id',vd.vehicle_image_id);
+      fd.append('plate_no_ocr',vd.detected_plate||'');
+      fd.append('plate_no_typed',plate); fd.append('v_type',vtype); fd.append('v_model',model); fd.append('v_color',color);
+    } catch(e) { hideProc(); showA('gA','err',`Vehicle error: ${e.message}`); return; }
+  }
+  setPS(5);
+  try {
+    const r = await fetch(`${API}/register/submit`,{method:'POST',body:fd});
+    const d = await r.json();
+    hideProc();
+    if (!r.ok) { showA('gA','err',d.detail||'Registration failed.'); return; }
+    // ── Transition directly to dashboard after registration ──────────
+    enterDashboard({
+      citizen_uid:   d.citizen_uid,
+      name:          d.verified_name,
+      karma_score:   d.karma_score,
+      grid_node:     d.grid_node,
+      face_preview:  d.face_preview ? `${API}${d.face_preview}` : '',
+    });
+    loadPop();
+  } catch(e) { hideProc(); showA('gA','err',`Submit error: ${e.message}`); }
+}
+
+async function doLogin() {
+  const name = document.getElementById('lN').value.trim();
+  const a    = document.getElementById('lA4').value.trim();
+  if (!name||!a) { showA('lA','err','Please fill in both fields.'); return; }
+  const fd = new FormData(); fd.append('name',name); fd.append('aadhaar_last4',a);
+  try {
+    const r = await fetch(`${API}/auth/login`,{method:'POST',body:fd});
+    const d = await r.json();
+    if (!r.ok) { showA('lA','err',d.detail||'Authentication failed. Check your details.'); return; }
+    // ── Transition to dashboard after login ──────────────────────────
+    enterDashboard({
+      citizen_uid:  d.citizen_uid,
+      name:         d.name,
+      karma_score:  d.karma_score,
+      grid_node:    d.grid_node,
+      face_preview: '',   // login doesn't return a face URL; dashboard fetches from registry path
+    });
+  } catch(e) { showA('lA','err',`Network error: ${e.message}`); }
+}
+
+// ── Processing overlay helpers ────────────────────────────────────
+let _pt;
+function showProc() {
+  document.getElementById('proc').classList.add('on');
+  document.getElementById('subBtn').disabled = true;
+  ['ps1','ps2','ps3','ps4','ps5'].forEach(id => document.getElementById(id).className='pstep');
+  document.getElementById('ps1').classList.add('active');
+  let i = 1;
+  _pt = setInterval(() => {
+    if (i < 5) {
+      document.getElementById(`ps${i}`).classList.remove('active');
+      document.getElementById(`ps${i}`).classList.add('done');
+      document.getElementById(`ps${i+1}`).classList.add('active');
+      i++;
+    }
+  }, 1800);
+}
+function hideProc() {
+  clearInterval(_pt);
+  document.getElementById('proc').classList.remove('on');
+  document.getElementById('subBtn').disabled = false;
+}
+function setPS(n) { for(let i=1;i<=n;i++){const el=document.getElementById(`ps${i}`);el.classList.remove('active');el.classList.add('done');} }
+function showA(id,type,msg) { const el=document.getElementById(id); el.className=`alert ${type} show`; el.textContent=msg; }
+function clearA(id) { document.getElementById(id).className='alert'; }
+
+// ══════════════════════════════════════════════════════════════════
+// DASHBOARD — Authentication handshake & state transition
+// ══════════════════════════════════════════════════════════════════
+
+function enterDashboard(citizen) {
+  // Save full citizen object to localStorage so dashboard.html can read it
+  try {
+    localStorage.setItem('omni_citizen', JSON.stringify(citizen));
+    localStorage.setItem('omni_api',     API);
+  } catch(e) { console.warn('localStorage unavailable', e); }
+
+  // Redirect to the full dashboard
+  window.location.href = 'dashboard.html';
+}
+
+function populateIdPanel(c) {
+  // Name
+  document.getElementById('db-name').textContent = c.name || '—';
+
+  // UID
+  document.getElementById('db-uid').textContent = c.citizen_uid || '—';
+
+  // Karma
+  document.getElementById('db-karma-val').textContent = c.karma_score ?? '1.0';
+
+  // Node
+  const node = Array.isArray(c.grid_node) ? c.grid_node : [0,0];
+  document.getElementById('db-node-val').textContent  = `Node [${node[0]}, ${node[1]}]`;
+  document.getElementById('db-session-node').textContent = `[${node[0]}, ${node[1]}]`;
+  document.getElementById('db-session-name').textContent = c.name || '—';
+
+  // Face image
+  if (c.face_preview) {
+    document.getElementById('db-face-img').src = c.face_preview;
+    document.getElementById('db-face-placeholder').style.display = 'none';
+  } else {
+    // Try to build the registry path: /database/citizens/{NAME}_{UID_prefix}/Info/face_crop.jpg
+    const safeName = (c.name||'').replace(/\s+/g,'_');
+    const uidPrefix = (c.citizen_uid||'').slice(0,8);
+    const guessPath = `${API}/database/citizens/${safeName}_${uidPrefix}/Info/face_crop.jpg`;
+    const img = document.getElementById('db-face-img');
+    img.src = guessPath;
+    img.onerror = () => {
+      img.style.display = 'none';
+      document.getElementById('db-face-placeholder').style.display = 'flex';
+    };
+  }
+
+  // Re-trigger scan line animation
+  const sl = document.getElementById('db-scanline');
+  sl.style.animation = 'none';
+  sl.offsetHeight;   // force reflow
+  sl.style.animation = '';
+}
+
+function startClock() {
+  const tick = () => {
+    const now = new Date();
+    document.getElementById('db-clock').textContent =
+      now.toLocaleTimeString('en-IN', {hour12:false}) + '  IST';
+  };
+  tick();
+  S.clockInterval = setInterval(tick, 1000);
+}
+
+// ── Logout ────────────────────────────────────────────────────────
+function doLogout() {
+  // Kill intervals
+  clearInterval(S.clockInterval);
+  clearInterval(S.chhayaInterval);
+  S.citizen      = null;
+  S.chhayaActive = false;
+
+  // Reset dashboard state
+  document.getElementById('dashboard').classList.remove('on');
+  document.getElementById('chhaya-tog').classList.remove('on');
+  document.getElementById('chhaya-row').classList.remove('chhaya-on');
+  document.getElementById('chhaya-tracker').classList.remove('tracking');
+  document.getElementById('chhaya-tracker-txt').textContent = 'Awaiting activation…';
+  document.getElementById('chhaya-coords').style.display = 'none';
+  document.getElementById('chhaya-status-badge').className = 'mod-head-status mhs-standby';
+  document.getElementById('chhaya-status-badge').textContent = 'STANDBY';
+
+  // Restore gateway
+  document.querySelector('.page').classList.remove('dashboard-active');
+  document.querySelector('.tabs').style.display    = '';
+  document.querySelector('.logo-tagline').textContent = 'Citizen Trust Gateway · v1.0';
+  document.querySelector('.status-txt').textContent   = 'System Online';
+  document.getElementById('LV').style.display = '';
+  switchTab('l');
+
+  // Clear login fields
+  document.getElementById('lN').value  = '';
+  document.getElementById('lA4').value = '';
+  clearA('lA');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MODULE A-EXT: Chhaya Protocol
+// ══════════════════════════════════════════════════════════════════
+
+async function toggleChhaya() {
+  if (!S.citizen) return;
+  const activate = !S.chhayaActive;
+
+  // Optimistic UI update
+  const badge   = document.getElementById('chhaya-status-badge');
+  const tog     = document.getElementById('chhaya-tog');
+  const row     = document.getElementById('chhaya-row');
+  const tracker = document.getElementById('chhaya-tracker');
+  const tTxt    = document.getElementById('chhaya-tracker-txt');
+  const coords  = document.getElementById('chhaya-coords');
+  const sub     = document.getElementById('chhaya-sub-txt');
+
+  badge.textContent = 'LINKING NODE…';
+  badge.className   = 'mod-head-status mhs-linking';
+  tTxt.textContent  = 'Linking to city grid…';
+
+  const fd = new FormData();
+  fd.append('citizen_uid', S.citizen.citizen_uid);
+  fd.append('activate',    activate);
+
+  try {
+    const r = await fetch(`${API}/chhaya/toggle`,{method:'POST',body:fd});
+    const d = await r.json();
+
+    S.chhayaActive = d.active;
+    tog.classList.toggle('on', d.active);
+    row.classList.toggle('chhaya-on', d.active);
+
+    if (d.active) {
+      badge.textContent = 'ESCORT ACTIVE';
+      badge.className   = 'mod-head-status mhs-active';
+      tracker.classList.add('tracking');
+      const node = Array.isArray(d.grid_node) ? d.grid_node : [0,0];
+      tTxt.textContent      = 'Escort active — tracking location';
+      coords.textContent    = `[${node[0]}, ${node[1]}]`;
+      coords.style.display  = '';
+      sub.textContent       = 'Active — the city is watching over you';
+
+      // Simulate live node drift every 8s (placeholder for real sim bridge)
+      clearInterval(S.chhayaInterval);
+      S.chhayaInterval = setInterval(() => {
+        const r = Array.isArray(d.grid_node) ? [...d.grid_node] : [0,0];
+        r[0] = Math.max(0, Math.min(19, r[0] + (Math.random()>0.5?1:-1)));
+        r[1] = Math.max(0, Math.min(19, r[1] + (Math.random()>0.5?1:-1)));
+        coords.textContent = `[${r[0]}, ${r[1]}]`;
+      }, 8000);
+
+    } else {
+      badge.textContent = 'STANDBY';
+      badge.className   = 'mod-head-status mhs-standby';
+      tracker.classList.remove('tracking');
+      tTxt.textContent     = 'Escort deactivated';
+      coords.style.display = 'none';
+      sub.textContent      = 'Tap to activate — the city will watch over you';
+      clearInterval(S.chhayaInterval);
+    }
+
+  } catch(e) {
+    badge.textContent = 'STANDBY';
+    badge.className   = 'mod-head-status mhs-standby';
+    tTxt.textContent  = `Error: ${e.message}`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MODULE B: Anomaly Reporting Hub
+// ══════════════════════════════════════════════════════════════════
+
+async function submitReport() {
+  if (!S.citizen) return;
+  const cat  = document.getElementById('report-category').value;
+  const desc = document.getElementById('report-desc').value.trim();
+  const btn  = document.getElementById('report-btn');
+  const al   = document.getElementById('report-alert');
+
+  if (!cat)  { al.className='report-alert err show'; al.textContent='Please select an incident category.'; return; }
+  if (!desc) { al.className='report-alert err show'; al.textContent='Please describe the incident.'; return; }
+
+  btn.disabled = true; btn.textContent = 'Filing…';
+  al.className = 'report-alert';
+
+  const node = Array.isArray(S.citizen.grid_node) ? JSON.stringify(S.citizen.grid_node) : '[0,0]';
+  const fd = new FormData();
+  fd.append('citizen_uid',  S.citizen.citizen_uid);
+  fd.append('category',     cat);
+  fd.append('description',  desc);
+  fd.append('grid_node',    node);
+
+  try {
+    const r = await fetch(`${API}/report/submit`,{method:'POST',body:fd});
+    const d = await r.json();
+
+    if (!r.ok) {
+      al.className = 'report-alert err show';
+      al.textContent = d.detail || 'Report submission failed.';
+    } else {
+      al.className = 'report-alert ok show';
+      al.textContent = `✓ ${d.message} Ticket: ${d.ticket_id}`;
+      document.getElementById('report-category').value = '';
+      document.getElementById('report-desc').value = '';
+      document.getElementById('report-status-badge').textContent = 'FILED';
+      document.getElementById('report-status-badge').className = 'mod-head-status mhs-filed';
+      setTimeout(() => {
+        document.getElementById('report-status-badge').textContent = 'PUBLIC LEDGER';
+        document.getElementById('report-status-badge').className = 'mod-head-status mhs-standby';
+      }, 4000);
+      loadLedger();
+    }
+  } catch(e) {
+    al.className = 'report-alert err show';
+    al.textContent = `Network error: ${e.message}`;
+  }
+
+  btn.disabled = false; btn.textContent = 'File Report →';
+}
+
+async function loadLedger() {
+  const list = document.getElementById('ledger-list');
+  try {
+    const r = await fetch(`${API}/report/list?limit=8`);
+    const d = await r.json();
+    if (!d.reports || d.reports.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--text3)">No reports filed yet.</div>';
+      return;
+    }
+    list.innerHTML = d.reports.map(rp => `
+      <div class="ledger-item">
+        <div class="li-id">${rp.ticket_id}</div>
+        <div class="li-body">
+          <div class="li-type">${rp.category.replace(/_/g,' ')}</div>
+          <div class="li-desc">${rp.description}</div>
+        </div>
+        <div class="li-status ${rp.status==='OPEN'?'open':'closed'}">${rp.status}</div>
+      </div>`).join('');
+  } catch {
+    list.innerHTML = '<div style="text-align:center;padding:12px;font-size:12px;color:var(--text3)">Could not load ledger.</div>';
+  }
+}
+</script>
+</body>
+</html>
